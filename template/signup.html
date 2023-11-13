@@ -1,0 +1,181 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'login/login/fonts/icomoon/style.css' %}">
+
+    <link rel="stylesheet" href="{% static 'login/login/css/owl.carousel.min.css' %}">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'login/login/css/bootstrap.min.css' %}">
+    
+    <!-- Style -->
+    <link rel="stylesheet" href="{% static 'login/login/css/style.css' %}">
+
+    <title>Login </title>
+    <style>
+      @import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
+      *{
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+      }
+      
+      form .input-box input{
+        height: 100%;
+        width: 100%;
+        outline: none;
+        padding: 20px;
+        font-size: 17px;
+        font-weight: 400;
+        color: #333;
+        border: 1.5px solid #C7BEBE;
+        border-bottom-width: 2.5px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+       
+      }
+      .wrapper{
+        position: relative;
+        max-width: 430px;
+        width: 100%;
+        background: #fff;
+        padding: 34px;
+        
+        border-radius: 6px;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+      }
+      .wrapper h2{
+        position: relative;
+        font-size: 22px;
+        font-weight: 600;
+        color: #333;
+      }
+      .wrapper h2::before{
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 3px;
+        width: 28px;
+        border-radius: 12px;
+        background: #4070f4;
+      }
+      .wrapper form{
+        margin-top: 30px;
+      }
+      .wrapper form .input-box{
+        height: 52px;
+        margin: 18px 0;
+        margin-bottom: 20px;
+      }
+      .input-box input:focus,
+.input-box input:valid{
+  border-color: #4070f4;
+}
+form .policy{
+  display: flex;
+  align-items: center;
+}
+form h3{
+  color: #707070;
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 10px;
+}
+.input-box.button input{
+  color: #fff;
+  letter-spacing: 1px;
+  border: none;
+  background: #4070f4;
+  cursor: pointer;
+}
+.input-box.button input:hover{
+  background: #0e4bf1;
+}
+form .text h3{
+ color: #333;
+ width: 100%;
+ text-align: center;
+ margin-top: 10px;
+}
+form .text h3 a{
+  color: #4070f4;
+  text-decoration: none;
+}
+form .text h3 a:hover{
+  text-decoration: underline;
+}
+    </style>
+    
+  </head>
+  <body>
+  
+
+  <div class="d-lg-flex half">
+    <div class="bg order-1 order-md-2" style="background-image: url('{% static 'images/log2.jpg' %}');"></div>
+    <div class="contents order-2 order-md-1">
+      <div class="container">
+        <div class="row align-items-center justify-content-center">
+          <div class="col-md-7">
+            <h3 style="color: rgb(35, 120, 168);">Welcome To <img src="{% static 'images/S.png' %}" alt="Logo" style="width: 90px; height: 100px; padding-bottom: 10px;"></h3>
+            <h3 style="color: rgb(35, 120, 168);">Sign Up </h3>
+            <form action="{% url 'signup' %}" method="post">
+              {% csrf_token %}
+              <div class="input-box">
+                <input type="text" name="name" placeholder="Enter your name" required>
+              </div>
+              <div class="input-box">
+                <input type="text" name="email" placeholder="Enter your email" required>
+              </div>
+              <div class="input-box">
+                <input type="text" name="phone_no" placeholder="Enter your phone number" required>
+              </div>
+              <div class="input-box">
+                <input type="password" name="password" placeholder="Create password" required>
+              </div>
+              <div class="input-box">
+                <input type="password" name="confirmpassword" placeholder="Confirm password" required>
+              </div>
+              {% if messages %}
+                      <div class="messages">
+                           {% for message in messages %}
+                               <div class="{% if message.tags %}alert alert-{{ message.tags }}{% endif %}">
+                           {{ message }}
+                              </div>
+                            {% endfor %}
+                      </div>
+                {% endif %}
+              <div class="policy">
+                <input type="checkbox">
+                <h3>I accept all terms & condition</h3>
+              </div>
+              <div class="input-box button">
+                <input type="Submit" value="Register Now">
+              </div>
+              <div class="text">
+                <h3>Already have an account? <a href="{% url 'login' %}">Login now</a></h3>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+  </div>
+    
+    
+
+    <script src="{% static 'login/login/js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'login/login/js/popper.min.js' %}"></script>
+    <script src="{% static 'login/login/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'login/login/js/main.js' %}"></script>
+  </body>
+</html>

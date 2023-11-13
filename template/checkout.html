@@ -1,0 +1,407 @@
+
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Untree.co">
+  <link rel="shortcut icon" href="favicon.png">
+
+  <meta name="description" content="" />
+  <meta name="keywords" content="bootstrap, bootstrap4" />
+
+		<!-- Bootstrap CSS -->
+		<link rel="canonical" href="https://getbootstrap.com/docs/5.3/examples/album/">
+		<link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+		<link href="{% static 'css/tiny-slider.css' %}" rel="stylesheet">
+		<link href="{% static 'css/style.css' %}" rel="stylesheet">
+		<title>Old Stories </title>
+	
+		<style>
+            
+			
+.album {
+    margin: 150px;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+    .album {
+        margin: 50px; 
+    }
+}
+
+/* Media query for even smaller screens */
+@media (max-width: 576px) {
+    .album {
+        margin: 20px; 
+    }
+}
+
+.card {
+    max-width: 400px;
+    margin: 0 auto; /* Center-align the card horizontally */
+}
+
+
+.card-img-top {
+    max-width: 380px;
+    height: 300px;
+}
+@media (max-width: 576px) {
+    /* Adjust card width for smaller screens */
+    .card {
+        max-width: 400px;
+    }
+    .card-img-top {
+        max-width: 380px;
+		height: 300px;
+    }
+}
+		  </style>
+		<!-- Start Header/Navigation -->
+		<nav class="custom-navbar navbar navbar navbar-expand-md navbar-dark bg-dark" style="background-color: rgb(14, 69, 77) !important;" arial-label="Furni navigation bar">
+
+			<div class="container">
+				<!-- <a class="navbar-brand" href="index.html">old stories<span>.</span></a> -->
+				<a class="navbar-brand" href="index.html">
+					<img src="{% static 'images/S.png' %}" alt="Logo" style="width: 150px; height: 150px; padding-top: 10px;">
+				</a>
+				<div class="col-lg-6 col-6 text-left" style="width: 400px;margin-left:50px;">
+                    <form method="get" action="{% url 'search' %}">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="q" placeholder="Search for products">
+                            <div class="input-group-append"> 
+                                <button type="submit"class="btn btn-dark" style="background-color: rgb(14, 69, 77);">
+                                    <i class="fa fa-search"style="color: white;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarsFurni" aria-controls="navbarsFurni" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarsFurni">
+					<ul class="custom-navbar-nav navbar-nav ms-auto mb-2 mb-md-0">
+						<li>
+							<a class="nav-link" href="{% url 'index' %}">Home</a>
+						</li>
+						<li class="nav-item active"><a class="nav-link" href="{% url 'shop' %}">Shop</a></li>
+						<li><a class="nav-link" href="">Collection</a></li>
+						<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
+						<li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li>
+					</ul>
+					<ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
+						<li><a class="nav-link" href="{% url 'wish' %}"><img src="{% static 'images/like.png' %}"></a></li>
+						{% if user.is_authenticated %}
+						<li><a class="nav-link" href="{% url 'profile' %}"><img src="{% static 'images/user.svg' %}" alt="profile"></a></li>
+						{% else %}
+						<li><a class="nav-link" href="{% url 'signup' %}"><img src="{% static 'images/user.svg' %}" alt="Signup"></a></li>
+						{% endif %}
+						<li><a class="nav-link" href="{% url 'cart' %}"><img src="{% static 'images/cart.svg' %}"></a></li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+	</head>
+<body>
+<div class="untree_co-section">
+    <div class="container ">
+      <form method="post" class="mb-5" action="{% url 'apply_coupon' %}">
+        {% csrf_token %}		
+                <div class="row">
+                  <div class="col-md-12">
+                    <label class="text-black h4" for="coupon">Coupon</label>
+                    <input type="text" class="form-control p-4" style="width: 400px;" placeholder="Coupon Code" list="couponList" name="coupon_code">
+                  </div>
+                  <div class="col-md-8 mb-3 mb-md-0" style="width: 400px;">
+          <datalist id="couponList">
+            {% for coupon in coupons %}
+            <option value="{{ coupon.coupon_code }}">
+            {% endfor %}
+          </datalist>
+        </div>
+                  <div class="col-md-4">
+                    <button class="btn btn-black" style="background-color: rgb(14, 69, 77); margin-top:20px;">Apply Coupon</button>
+                  </div>
+                </div>
+</form>
+      <form id="order-form" action="{% url 'order_placed' %}" method="post">
+        <form method="POST" action="{% url 'razorpay' %}">
+        {% csrf_token %}
+        {% csrf_token %}
+      <div class="row">
+        <div class="col-md-6 mb-5 mb-md-0">
+          <h2 class="h3 mb-3 text-black">Billing Details</h2>
+          <div class="p-3 p-lg-5 border bg-white">
+            <div class="form-group row">
+              <div class="col-md-6">
+                <label for="c_fname" class="text-black">First Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
+              </div>
+            </div>
+                
+
+
+
+                <div class="form-group row">
+                  <div class="col-md-12">
+                    <label for="addressDropdown">Select Address:</label>
+                      <select id="addressDropdown" name="addressId">
+                        <option value="">Select an address</option>
+                        {% for i in address %}
+                        <option value="{{ i.id }}">{{i.full_name }},{{ i.house_no  }},{{ i.street }},{{ i.city}},{{ i.state}},{{i.post_code}}</option>
+                        {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                
+            <div class="form-group row mb-5">
+              <div class="col-md-6">
+                <label for="c_phone" class="text-black">Phone <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="phone_number" name="phone_no" value="{{ user.phone_number }}">
+              </div>
+            </div>
+                <!-- different shipping address -->
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModalCenter">
+                  Ship to different address
+                </button>
+                <div class="form-group row" style="margin-top: 20px;">
+                  <div class="col-md-12">
+                    <label for="addressDropdown">Select Address:</label>
+                      <select id="addressDropdown" name="shippingId">
+                        <option value="">Select an different address</option>
+                        {% for i in shipping %}
+                        <option value="{{ i.id }}">{{i.full_name }},{{ i.house_no  }},{{ i.street }},{{ i.city}},{{ i.state}},{{i.post_code}}</option>
+                        {% endfor %}
+                      </select>
+                  </div>
+                </div>
+
+
+
+                <div class="table-responsive">
+                  <table class="table text-start align-middle table-bordered table-hover mb-0">
+                      <thead>
+                          <tr class="text-dark">
+                              <th>Shipping Address</th>
+                              <th></th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% for i in shipping %}
+                          <tr>
+                              <td>{{ i.full_name }}<br>
+                                  {{ i.house_no }}, {{ i.street }},<br>
+                                  {{ i.city }}, {{ i.state }}, {{ i.post_code }}<br>
+                                  Phone: {{ i.phone_no }}
+                              </td>
+                              <td>
+                                  <a href="{% url 'edit_address' i.id %}" style="color: black;">
+                                      <i class="fas fa-edit"></i> 
+                                  </a><br><br><br>
+                                  <a href="{% url 'delete_address' i.id %}" style="color: black;" onclick="return confirm('Are you sure you want to delete this address?')">
+                                      <i class="fas fa-trash-alt"></i> 
+                                  </a>
+                                  <br><br>
+                                  
+                              </td>
+                          </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
+                  
+              </div>
+              <!-- end of new shipping address -->
+              {% for message in messages %}
+                 <div class="alert alert-danger">
+              {{ message }}
+              </div>
+              {% endfor %}
+          </div>
+        </div>
+        
+        
+        <div class="col-md-6">
+
+          
+<!-- 
+          <div class="row mb-5">
+            <div class="col-md-12"> -->
+              <h2 class="h3 mb-3 text-black">Your Order</h2>
+              <div class="p-3 p-lg-5 border bg-white">
+                <table class="table site-block-order-table mb-5">
+                  <thead>
+                    <th>Product</th>
+                    
+                    <th>quantity</th>
+                  </thead>
+                  {% for cart_item in cart_items %}
+                  <tbody>
+                    <tr>
+                      <td>{{ cart_item.variation.product.product_name}}</td>
+                      
+                      <td>x {{ cart_item.quantity }}</td>
+
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                      <td class="text-black font-weight-bold"><strong>Cart Subtotal</strong></td>
+                      <td class="text-black">₹{{ subtotal }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-black font-weight-bold">Coupon</td>
+                        <td>
+                        {% if request.session.discount %}
+                          <h6 style="color: green;" class="font-weight-medium">₹{{ request.session.discount }}</h6>
+                        {% endif %}
+                        <br><br></td>
+                      
+                    </tr>
+                    <tr>
+                      <td class="text-black font-weight-bold"><strong>Shipping charge</strong></td>
+                      <td class="text-black font-weight-bold"><strong>₹1500</strong></td>
+
+                    </tr>
+                    <tr>
+                      <td class="text-black font-weight-bold"><strong>Order Total</strong></td>
+                      <td class="text-black font-weight-bold"><strong>₹{{ total }}</strong></td>
+                    </tr>
+                    
+                  </tbody>
+                </table>
+
+                <div class="border p-3 mb-3">
+                  <div class="card-body">
+                      <div class="form-group">
+                        <div class="custom-control custom-radio">
+                            <input type="radio" class="custom-control-input" name="payment" id="directcheck" value="cod" onchange="handlePaymentSelection()">
+                            <label class="custom-control-label" for="directcheck">COD (cash on delivery)</label>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-group">
+                      <div class="custom-control custom-radio">
+                        <input type="radio" class="custom-control-input" name="payment" id="banktransfer" value="razorpay" onchange="handlePaymentSelection()">
+                        <label class="custom-control-label" for="banktransfer">RAZORPAY</label>
+                      </div>
+                  </div>
+                </div>
+
+                 
+
+                <div class="card-footer border-secondary bg-transparent">
+                  <!-- <a  class="btn btn-md btn-primary my-3 py-3">Place Order</a> -->
+                  <button id="place-order-button" class="btn btn-md btn-block btn-primary font-weight-bold my-3 py-3" type="submit">Place Order</button>
+                  <button id="rzp-button1" class="btn btn-md btn-block btn-primary font-weight-bold my-3 py-3 paywithrazorpay">Pay with RAZORPAY</button>
+                
+              </form>
+                  
+                  <div class="row px-xl-5">
+                    <div style="padding-top: -250px;" class="col-lg-8">
+                        <div class="error-message">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <p style="font-size: 25px;" class="text-danger">{{ message }}</p>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                  </div>
+                 
+              </div>
+              </div>
+            <!-- </div>
+          </div> -->
+       
+        </div>
+      </div>
+      </form>
+    </div>
+    
+    <!-- Button trigger modal -->
+
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Shipping Address</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+       
+          <form method="POST" action="{% url 'shipping_add_address' %}">
+              {% csrf_token %}
+              <div class="modal-body">
+                  <label>Full Name</label>
+                  <input name="full_name" type="text" class="form-control" required>
+          
+                  <label>House No</label>
+                  <input name="house_no" type="text" class="form-control" required>
+          
+                  <label>Post Code</label>
+                  <input name="post_code" type="text" class="form-control" required>
+                  
+                  <label>State</label>
+                  <input name="state" type="text" class="form-control" required>
+                  
+                  <label>Street</label>
+                  <input name="street" type="text" class="form-control" required>
+                  
+                  <label>City</label>
+                  <input name="city" type="text" class="form-control" required>
+
+                  <label>Phone Number</label>
+                  <input name="phone_no" type="text" class="form-control" required>
+              </div>
+              <div class="modal-footer">
+                  <button type="submit" class="btn btn-success">Submit</button>
+              </div>
+          </form>
+      </div>
+</div>
+  </div>
+		<!-- Start Footer Section -->
+    
+
+		<!-- End Footer Section -->	
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+		<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+		<script src="{% static 'js/tiny-slider.js'  %}"></script>
+		<script src="{% static 'js/custom.js'  %}"></script>
+    <!-- testing -->
+    <script>
+      function handlePaymentSelection() {
+          var codRadio = document.getElementById("directcheck");
+          var placeOrderButton = document.getElementById("place-order-button");
+          var razorpayButton = document.getElementById("rzp-button1");
+  
+          if (codRadio.checked) {
+              placeOrderButton.style.display = "block";
+              razorpayButton.style.display = "none";
+          } else {
+              placeOrderButton.style.display = "none";
+              razorpayButton.style.display = "block";
+          }
+      }
+      
+    </script>
+
+
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="{% static 'home/js/checkout.js' %}"></script>
+   
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+	</body>
+</html>

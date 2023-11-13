@@ -1,0 +1,102 @@
+
+  <!DOCTYPE html>
+
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>OTP</title> 
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins',sans-serif;
+}
+body{
+  background: white;
+  overflow: hidden;
+}
+::selection{
+  background: rgb(14, 69, 77);
+}
+.container{
+  max-width: 440px;
+  padding: 0 20px;
+  margin: 170px auto;
+}
+.wrapper{
+  width: 100%;
+  background: white;
+  border-color: rgb(14, 69, 77);
+  border-radius: 5px;
+  box-shadow: 0px 4px 10px 1px rgba(0,0,0,0.1);
+}
+.wrapper .title{
+  height: 90px;
+  background: rgb(14, 69, 77);
+  border-radius: 5px 5px 0 0;
+  color: #fff;
+  font-size: 30px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wrapper form{
+  padding: 30px 25px 25px 25px;
+}
+form input{
+  width:200px;
+  height:30px
+}
+form button{
+  width:100px;
+  height:30px
+}
+
+</style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="wrapper">
+        <div class="title"><span>OTP VERIFICATION</span></div><hr>
+        <form method="post">
+         {% csrf_token %}
+            <div>
+
+            {% if messages %}
+                  <div id="messages-container">
+                  <div class="alert alert-success" role="alert">
+                    
+                    <ul class="messages">
+                        {% for message in messages %}
+                        <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                    <script>
+                      setTimeout(function() {
+                        var container = document.getElementById('messages-container');
+                        container.parentNode.removeChild(container);
+                          
+                      }, 2000);
+                    </script>   
+                    
+                  </div>
+                  </div>
+            {% endif %}
+            </div>
+            
+            
+            <input placeholder="Enter verification code" type="text" id="otp" name="otp" pattern="[0-9]{6}" title="Please enter a 6-digit code" required>
+    
+            <button type="submit" style="background:rgb(14, 69, 77); color:white;">Verify</button>
+          
+        </form>
+         
+      </div>
+    </div>
+
+  </body>
+</html>

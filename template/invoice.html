@@ -1,0 +1,117 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        tfoot {
+          text-align: right; /* Set text alignment to right */
+          position: absolute; /* Position the tfoot absolutely */
+          bottom: 0; /* Position it at the bottom of the container (page) */
+          right: 0; /* Position it at the right side of the container (page) */
+        }
+      
+        tfoot tr {
+          display: inline-table; /* Display the rows as inline-table for horizontal alignment */
+        }
+      
+        tfoot tr td {
+          padding-left: 10px; /* Add some left padding for spacing */
+        }
+        table {
+            border-collapse: collapse; /* Merge borders of adjacent cells */
+            width: 100%; /* Adjust the width as needed */
+          }
+        
+          th, td {
+            border: 1px solid #ddd; /* Add a 1px solid border to table cells */
+            padding: 8px; /* Add padding for spacing */
+            text-align: left; /* Align cell content to the left */
+          }
+        
+          tr:nth-child(even) {
+            background-color: #f2f2f2; /* Add a background color to even rows (optional) */
+          }
+      </style>
+</head>
+<body>
+    <header>
+        <div class="row align-items-center">
+          <div class="col-sm-7 text-center text-sm-start mb-3 mb-sm-0">
+            <img src="{% static 'images/S.png' %}" alt="Logo" width="150" height="150">
+            <h1 style="color: rgb(14, 69, 77);">OLD STORIES</h1>
+          </div>
+          <div class="col-sm-5 text-center text-sm-end">
+            <h4 class="text-7 mb-0">INVOICE</h4>
+          </div>
+        </div>
+        <hr>
+        </header>
+        <div class="row">
+          <div class="col-sm-6"><strong>Date:</strong> {{order.date}}</div>
+          <div class="col-sm-6 text-sm-end"> <strong>Invoice No:</strong> {{order.id}}</div>
+            
+        </div>
+        <hr>
+        <div class="row">
+          <div class="col-sm-6 text-sm-end order-sm-1"> <strong>Pay To:</strong>
+            <p>OLD STORIES</p>
+          </div>
+          <hr>
+          <div class="col-sm-6 order-sm-0"> <strong>Invoiced To:</strong>
+            <address>
+            {{order.user.username}}<br>
+            15 Hodges Mews, High Wycombe<br>
+            HP12 3JL<br>
+            United Kingdom
+            </address>
+            <p><strong>Payment type:</strong> {{order.payment_type}}</p>
+            <hr>
+          </div>
+        </div>
+          
+        <div class="card">
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table mb-0">
+              <thead class="card-header">
+                <tr>
+                  <td class="col-3"><strong>Product</strong></td>
+                  <td class="col-1 text-center"><strong> Color</strong></td>
+                  <td class="col-1 text-center"><strong>QTY</strong></td>
+                  <td class="col-2 text-end"><strong>Amount</strong></td>
+                </tr>
+              </thead>
+                <tbody>
+                  <tr>
+
+                    <td class="col-3">{{item.variation.product.product_name}}</td>
+                    <td class="col-2 text-center">{{item.variation.color}}</td>
+                    <td class="col-1 text-center">{{item.quantity}}</td>
+                    <td class="col-2 text-end">{{item.variation.price}}</td>
+                  </tr>
+                 
+                 
+                </tbody>
+              </table>
+              <table>
+                <tfoot class="card-footer">
+                    <tr>
+                      <td colspan="4" class="text-end"><strong>Shipping:</strong></td>
+                      <td class="text-end">1500.00</td>
+                    </tr>
+                    <tr>
+                      <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                      <td class="text-end">{{order.amount}}</td>
+                    </tr>
+                   
+                  </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+</body>
+</html>
