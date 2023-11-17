@@ -137,9 +137,8 @@
                                 <tr class="text-dark">
                                     <th scope="col">Id</th>
                                     <th scope="col">Name</th>
-                                    <th scope="col">Description</th>
                                     <th scope="col">Offer Description</th>
-                                    <th scope="col">Offer price</th>
+                                    <th scope="col">Offer %</th>
                                     <th scope="col">Manage</th>
                                    
                                 </tr>
@@ -148,8 +147,7 @@
                                 {% for category in categories %}
                                 <tr>
                                     <td>{{ category.id }}</td>
-                                    <td>{{ category.category_name }}</td>
-                                    <td>{{ category.description}}</td>
+                                    <td>{{ category.category_name }}</td>          
                                     <td>{{ category.category_offer_description}}</td>
                                     <td>{{ category.category_offer   }}</td>
                                     <td>

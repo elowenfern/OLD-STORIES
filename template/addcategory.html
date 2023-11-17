@@ -104,23 +104,17 @@
                                 <div class="form-group">
                                     <label>Category Name</label>
                                     <input name="category_name" type="text" class="form-control" required maxlength="100">
-                                </div>
-                                <div class="modal-body">
-                                    <div class="form-group">
-                                        <label>Description</label>
-                                        <input name="description" type="text" class="form-control" required maxlength="100">
-                                    </div>
+                                </div>                               
                                     <div class="modal-body">
                                         <div class="form-group">
                                             <label>Offer description</label>
-                                            <input name="offer_description" type="text" class="form-control" required maxlength="100">
+                                            <input name="category_offer_description" type="text" class="form-control" required maxlength="100">
                                         </div>
                                         <div class="modal-body">
                                             <div class="form-group">
-                                                <label>Offer price</label>
-                                                <input name="offer_price" type="text" class="form-control" required maxlength="100">
+                                                <label>Offer %</label>
+                                                <input name="category_offer" type="text" class="form-control"placeholder="Enter offer as a percentage e.g. 20 for 20%" min="0" max="100">
                                             </div>
-
                             </div>
                             <div class="modal-footer">
                                 <a href="{% url 'category' %}"><button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button></a>

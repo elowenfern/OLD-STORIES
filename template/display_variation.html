@@ -48,9 +48,11 @@
                         <li class="nav-item active"></li>
 						<li><a class="nav-link" href="{% url 'shop' %}">Shop</a></li>
                         </li>
-						<li><a class="nav-link" href="">Collection</a></li>
+						
 						<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
 						<li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li>
+						
+						<!-- <li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li> -->
 					</ul>
 
 					<ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -146,7 +148,15 @@
             <h2>{{selected_variation.product.product_name}}</h2>
             <p>{{selected_variation.product.description}}</p>
             <p><strong>Size:{{selected_variation.size}}</strong></p>
-            <p><strong>Price:{{selected_variation.price}} </strong></p>
+            <div>
+                
+                {% if selected_variation.final_price %}
+                <strong class="text-dark ml-2"><del>₹{{ selected_variation.price }}</del></strong>
+                    <h6 class="text-success"><strong>₹{{ selected_variation.final_price }}</strong></h6>
+                {% else %}
+                <p><strong>Price:₹{{selected_variation.price}}</strong></p>
+                {% endif %}
+            </div>
             <p>Availability: <strong>{{selected_variation.stock}}</strong> In Stock</p>
             
                 <!-- <form method="GET" action="{% url 'color' %}" class="color-selection-form" style="margin-bottom: 20px;">
@@ -160,7 +170,7 @@
         <button type="submit" class="btn btn-primary">Submit</button>
     </form> -->
             
-            <form method="POST" action="{% if user.is_authenticated %}{% url 'add_to_cart' selected_variation.id %}{% else %}{% url 'login' %}?next={% url 'add_to_cart' selected_variation.id %}{% endif %}" style="margin-bottom:20px;">
+            <form method="POST" action="{% if user.is_authenticated %}{% url 'add_to_cart' selected_variation.id %}{% else %}{% url 'loginpage' %}?next={% url 'add_to_cart' selected_variation.id %}{% endif %}" style="margin-bottom:20px;">
                 {% csrf_token %}
                 <label for="quantity">Quantity:</label>
                 <input type="number" id="quantity" name="quantity" min="1" value="1" class="form-control mb-3"

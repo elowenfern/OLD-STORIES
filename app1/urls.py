@@ -14,9 +14,12 @@ urlpatterns = [
     path('display_variations/<int:variation_id>/', views.display_variations, name='display_variations'),
     path('color/',views.color,name='color'),
     path('about/',views.about,name='about'),
-    #
-    path('sofa',views.sofa,name='sofa'),
-    path('chair',views.chair,name='chair'),
+    #category page
+   
+    #salesreprt
+    path('report-pdf-order/', views.report_pdf_order, name='report_pdf_order'),
+    path('chart-demo/', views.chart_demo, name='chart_demo'),
+    path('report_generator/<int:id/',views.report_generator,name='report_generator'),
     #wallet
     path('wallet/',views.wallet,name='wallet'),
     #cart
@@ -30,10 +33,8 @@ urlpatterns = [
     path('proceed-to-pay',views.proceedtopay,name='proceedtopay'),
     path('razorpay/',views.razorpay,name='razorpay'),
     path('success/', views.success, name='success'),
-
-    path('collection/',views.collection,name='collection'),
+    #contact
     path('contact/',views.contact,name='contact'),
-   
     #wishlist
     path('wish/',views.wish,name='wish'),
     path('add_to_wishlist/<int:id>/',views.add_to_wishlist,name='add_to_wishlist'),
@@ -41,7 +42,7 @@ urlpatterns = [
 
     path('signup/',views.signup,name='signup'),
     path('verify/',views.verify_signup,name='verify_signup'),
-    path('login/',views.login,name='login'),
+    path('loginpage/',views.loginpage,name='loginpage'),
     path('forget/',views.forgotpassword,name='forgotpassword'),
     path('reset/',views.reset_password,name='reset_password'),
     path('logout',views.logoutpage,name='logoutpage'),
@@ -124,6 +125,9 @@ urlpatterns = [
     path('coupon/<int:coupon_id>/edit/', views.editcoupon, name='edit_coupon'), 
     path('coupon/<int:id>/update_coupon/', views.update_coupon, name='update_coupon'),
     path('coupon/<int:coupon_id>/delete/', views.delete_coupon, name='delete_coupon'),
+    #contact
+    path('adminside_message/',views.adminside_message,name='adminside_message'),
+    path('reply/',views.reply,name='reply'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

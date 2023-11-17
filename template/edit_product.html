@@ -124,10 +124,9 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Offer</label>
-                                    <input name="referral_offer" type="number" class="form-control" min="0">
+                                    <label>Offer %</label>
+                                    <input name="offer" type="number" class="form-control" min="0" value="{{ product.product_offer }}">
                                 </div>
-                                
                                 <div class="form-group">
                                     <label>Min price</label>
                                     <input name="min_price" type="number" class="form-control" value="{{ product.min_price }}" required min="0">

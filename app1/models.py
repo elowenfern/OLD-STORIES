@@ -37,6 +37,7 @@ class CustomUser(AbstractUser):
     is_verified = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     phone_number=models.CharField(max_length=15,blank=True)
+    wallet_bal= models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     objects = CustomUserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -53,7 +54,10 @@ class Address(models.Model):
     street    =models.CharField(max_length=100)
     phone_no  =models.CharField(max_length=15,blank=True)
     city      =models.CharField(max_length=100)
-    is_default=models.BooleanField(default=False)
+    
+    is_deleted = models.BooleanField(default=False)
+    def soft_delete(self):
+        Address.objects.filter(id=self.id).update(is_deleted=True)
 class Shipping(models.Model):
     user      =models.ForeignKey(CustomUser,on_delete=models.CASCADE,null = True,blank=True)
     full_name =models.CharField(max_length=100)
@@ -63,14 +67,15 @@ class Shipping(models.Model):
     street    =models.CharField(max_length=100)
     phone_no  =models.CharField(max_length=15,blank=True)
     city      =models.CharField(max_length=100)
-    is_default=models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    def soft_delete(self):
+        Shipping.objects.filter(id=self.id).update(is_deleted=True)
 class Category(models.Model):
     category_name               =   models.CharField(max_length=100)
-    description = models.CharField(max_length=1000, default='')
     active                      =   models.BooleanField(default=True)
     category_offer_description = models.CharField(max_length=100, null=True, blank=True)
     category_offer = models.PositiveBigIntegerField(default=0)
-    # deleted =models.BooleanField(default=False)
+   
     def __str__(self):
         return self.category_name
 
@@ -99,7 +104,7 @@ class Product(models.Model):
     deleted        =     models.BooleanField(default=False)
     image          =     models.ImageField(upload_to='products/',blank=True,null=True)
     section        =     models.ForeignKey(Section,on_delete=models.CASCADE,blank=True,null=True)
-    referral_offer = models.PositiveBigIntegerField(default=0, null=True)
+    product_offer =      models.DecimalField(max_digits=5, decimal_places=2,max_length=100, blank=True, null=True)
 class Images(models.Model):
     product     =  models.ForeignKey(Product, on_delete=models.CASCADE,related_name='product_images')
     images      =  models.ImageField(upload_to='products')
@@ -112,31 +117,14 @@ class Variation(models.Model):
     stock= models.IntegerField(default=0)
     deleted        =     models.BooleanField(default=False)
     price =models.IntegerField(blank=True , null=True)
-    def apply_discounts(self):
-        category_discount = 0
-        referral_discount = 0
+    final_price = models.IntegerField(blank=True, null=True)
+class Sales(models.Model):
+    variation = models.ForeignKey(Variation, on_delete=models.CASCADE)
+    quantity_sold = models.PositiveIntegerField(default=0)
+    date_sold = models.DateTimeField(auto_now_add=True)
 
-        # Check if the variation's product has a category offer
-        if self.product.category:
-            category_discount = self.product.category.category_offer
-
-        # Check if the product has a referral offer
-        referral_discount = self.product.referral_offer
-
-        # Calculate the total discount as the sum of category and referral discounts
-        total_discount = category_discount + referral_discount
-        if referral_discount > 0:
-            total_discount += 15
-        original_price = self.price  # Store the original price
-        discounted_price = original_price - ((total_discount / 100) * original_price)
-
-        return discounted_price
-
-
-    def save(self, *args, **kwargs):
-        if self.price is None:
-            self.price = self.apply_discounts()
-        super(Variation, self).save(*args, **kwargs)
+    def __str__(self):
+        return f"{self.variation.product.product_name} - {self.variation.color} - {self.variation.size} - {self.quantity_sold} units"
 
 class Variation_img(models.Model):
     variation=  models.ForeignKey(Variation,on_delete=models.CASCADE,null=True,blank=True) 
@@ -144,7 +132,7 @@ class Variation_img(models.Model):
     
 class Cart(models.Model):
     user           =     models.ForeignKey(CustomUser, on_delete=models.CASCADE,null=True,blank=True)
-    variation        =     models.ForeignKey(Variation,on_delete=models.CASCADE,null=True,blank=True)
+    variation      =     models.ForeignKey(Variation,on_delete=models.CASCADE,null=True,blank=True)
     quantity       =     models.IntegerField(default=0)
     image          =     models.ImageField(upload_to='products',null=True, blank=True )
     
@@ -166,6 +154,7 @@ class Order(models.Model):
             ('shipped','shipped'),
             ('delivered','delivered'),
             ('completed', 'Completed'),
+            ('return','Return'),
             ('cancelled', 'Cancelled'),
             ('refunded','refunded'),
             ('on_hold','on_hold')
@@ -198,6 +187,25 @@ class Coupon(models.Model):
 
     def _str_(self):
         return self.coupon_code
+class Wallet(models.Model):
+    user  =models.ForeignKey(CustomUser, on_delete=models.CASCADE,null=True,blank=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_credit = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status=models.CharField(max_length=20,blank=True)
+
+    def str(self):
+        return f"{self.amount} {self.is_credit}"
+
+    def iter(self):
+        yield self.pk
+class Contact(models.Model):
+   
+    name = models.CharField(max_length=255, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    message = models.CharField(max_length=1000, null=True, blank=True)
+
 
 
 

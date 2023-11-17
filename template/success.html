@@ -55,7 +55,7 @@
 					<ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
 						<li><a class="nav-link" href="{% url 'wish' %}"><img src="{% static 'images/like.png' %}"></a></li>
 						{% if user.is_authenticated %}
-						<li><a class="nav-link" href="{% url 'address' %}"><img src="{% static 'images/user.svg' %}" alt="address"></a></li>
+						<li><a class="nav-link" href="{% url 'profile' %}"><img src="{% static 'images/user.svg' %}" alt="profile"></a></li>
 						{% else %}
 						<li><a class="nav-link" href="{% url 'signup' %}"><img src="{% static 'images/user.svg' %}" alt="Signup"></a></li>
 						{% endif %}

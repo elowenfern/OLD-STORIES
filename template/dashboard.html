@@ -1,13 +1,15 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <title>Dashboard</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="" name="keywords">
     <meta content="" name="description">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.5.0/css/bootstrap.min.css">
+    
+    
 
     <!-- Favicon -->
     <link href="img/favicon.ico" rel="icon">
@@ -30,184 +32,206 @@
 
     <!-- Template Stylesheet -->
     <link href="{% static 'admin/admin/css/style.css' %}" rel="stylesheet">
-    <!-- chart js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+     <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.5.0/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.5.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- testing -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto|Varela+Round">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <!-- icon -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+
+    <style>
+        .pagination a {
+            margin-right: 5px;
+        }
+    </style>
+
 
 </head>
 
-<body>
-    <div class="container-xxl position-relative bg-white d-flex p-0">
+    <body>
+        <div class="container-xxl position-relative bg-white d-flex p-0">
+            <!-- Spinner Start -->
+            <!-- <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div> -->
+            <!-- Spinner End -->
+    
         
-        <!-- Sidebar Start -->
-        <div class="sidebar pe-4 pb-3">
+           <!-- Sidebar Start -->
+           <div class="sidebar pe-4 pb-3">
             {% include 'snippet/adminsidebar.html' %}
         </div>
         <!-- Sidebar End -->
-
-
-        <!-- Content Start -->
-        <div class="content">
-            <!-- Navbar Start -->
-            <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
-                <a href="index.html" class="navbar-brand d-flex d-lg-none me-4">
-                    <!-- <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2> -->
-                </a>
-                <a href="#" class="sidebar-toggler flex-shrink-0">
-                    <i class="fa fa-bars"></i>
-                </a>
-                <form class="d-none d-md-flex ms-4">
-                    <input class="form-control border-0" type="search" placeholder="Search">
-                </form>
-                
-                <div class="navbar-nav align-items-center ms-auto">
-                    <div class="nav-item dropdown">
-                       
-                    </div>
-                    <div class="nav-item dropdown">
+    
+            <!-- Content Start -->
+            <div class="content">
+                <!-- Navbar Start -->
+                <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+                    <a href="#" class="navbar-brand d-flex d-lg-none me-4">
+                        <!-- <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2> -->
+                    </a>
+                    <a href="#" class="sidebar-toggler flex-shrink-0">
+                        <i class="fa fa-bars"></i>
+                    </a>
+                    
+                    <div class="navbar-nav align-items-center ms-auto">
+                        <div class="nav-item dropdown">
+                            <!-- <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fa fa-envelope me-lg-2"></i>
+                                <span class="d-none d-lg-inline-flex">Message</span>
+                            </a> -->
+                            <div class="#">
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                                <img class="rounded-circle me-lg-2" src="{% static 'admin/admin/img/S.png' %}" alt="" style="width: 40px; height: 40px;">
+                                <span class="d-none d-lg-inline-flex">ATHIRA</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                                <a href="#" class="dropdown-item">My Profile</a>
+                                <a href="#" class="dropdown-item">Settings</a>
+                                <a href="{% url 'adminlogout' %}" class="dropdown-item">Log Out</a>
+                            </div>
+                        </div>
                         
                     </div>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                            <img class="rounded-circle me-lg-2" src="{% static 'admin/admin/img/S.png' %}" alt="" style="width: 40px; height: 40px;">
-                            <span class="d-none d-lg-inline-flex">ATHIRA</span>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
-                            <a href="#" class="dropdown-item">My Profile</a>
-                            <a href="#" class="dropdown-item">Settings</a>
-                            <a href="{% url 'adminlogout' %}" class="dropdown-item">Log Out</a>
-                        </div>
+                </nav>
+              
+    
+                <!-- Navbar End -->
+                <!-- Chart Containers Start -->
+                <div class="mt-4">
+                    <div class="chart-container">
+                        <canvas id="pieChart" width="400" height="400"></canvas>
                     </div>
                 </div>
-            </nav>
-            <!-- Navbar End -->
-        
-
-            <!-- chart start -->
-            <div class="mt-4">
-                <canvas id="myChart"></canvas>
-            </div>
-            <div class="mt-5"> <h2></h2> </div>
-            <div class="row mb-3">
-               
-                <div class="card-body p-4">
-                    {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-success">{{ message }}</div>
-                    {% endfor %}
-                    {% endif %} 
+                <div class="mt-4">
+                    <div class="chart-container">
+                        <canvas id="barChart" width="400" height="400"></canvas>
+                    </div>
                 </div>
-            </div>
-            
-            <div>
-                <canvas id="myChart"></canvas>
-            </div>
-            
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            
-            <script>
-                ///there was code///
-                ///here////
-            
-                const ctx = document.getElementById('myChart');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Order Amounts',
-                            data: data,
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
+                <!-- Chart Containers End -->
+    
+                <!-- Order Report Section Start -->
+                <div class="mt-5">
+                    <h2>Order Report</h2>
+                </div>
+                <div class="row mb-3">
+                    <form action="{% url 'report_pdf_order' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <label class="col-sm-2 col-form-label" for="from-date">From:</label>
+                            <div class="col-sm-3">
+                                <input type="date" class="form-control" id="from-date" name="from_date">
+                            </div>
+                        </div> 
+                        <div class="row mb-3">
+                            <label class="col-sm-2 col-form-label" for="to-date">To:</label>
+                            <div class="col-sm-3">
+                                <input type="date" class="form-control" id="to-date" name="to_date">
+                            </div>
+                        </div> 
+                        <button class="btn btn-primary ml-2" type="submit">Generate Report</button>
+                    </form>
+                    <div class="card-body p-4">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-success">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %} 
+                    </div>
+                </div>
+                <!-- Order Report Section End -->
+    
+    
+    
+    
+                
+    
+                <!-- JavaScript for Charts Start -->
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                    // Get the chart data from the server-side
+                    const orderLabels = {{ order_labels|safe }};
+                    const orderData = {{ order_data|safe }};
+                    const stockLabels = {{ stock_labels|safe }};
+                    const stockData = {{ stock_data|safe }};
+                
+                    // Create and render the pie chart
+                    const pieCtx = document.getElementById('pieChart').getContext('2d');
+                    new Chart(pieCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: stockLabels,
+                            datasets: [{
+                                data: stockData,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(255, 159, 64, 0.2)',
+                                    'rgba(255, 205, 86, 0.2)',
+                                    'rgba(75, 192, 192, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(255, 159, 64, 1)',
+                                    'rgba(255, 205, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(54, 162, 235, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                
+                    // Create and render the bar chart
+                    const barCtx = document.getElementById('barChart').getContext('2d');
+                    new Chart(barCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: orderLabels,
+                            datasets: [{
+                                label: 'Order Amounts',
+                                data: orderData,
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
                             }
                         }
-                    }
+                    });
                 });
-            </script>
-            
-        
-
-         
-        
-
-
-        
-
-
-    
-
-
-            <!-- Footer Start -->
-            <!-- <div class="container-fluid pt-4 px-4">
-                <div class="bg-light rounded-top p-4">
-                    <div class="row">
-                        <div class="col-12 col-sm-6 text-center text-sm-start">
-                            &copy; <a href="#">plantorium</a>, All Right Reserved. 
-                        </div>
-                        <div class="col-12 col-sm-6 text-center text-sm-end"> -->
-                            <!--/*** This template is free as long as you keep the footer author’s credit link/attribution link/backlink. If you'd like to use the template without the footer author’s credit link/attribution link/backlink, you can purchase the Credit Removal License from "https://htmlcodex.com/credit-removal". Thank you for your support. ***/-->
-                            <!-- Designed By <a href="https://htmlcodex.com">afif</a>
-                        </br>
-                        Distributed By <a class="border-bottom" href="https://themewagon.com" target="_blank">plantorium</a>
-                        </div>
-                    </div>
-                </div>
-            </div> --> 
-            <!-- Footer End
-        </div>
-         Content End -->
-
-
-        <!-- Back to Top -->
-        <!-- <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a> -->
-    </div>
-
-    <!-- JavaScript Libraries -->
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'admin/admin/lib/chart/chart.min.js' %}"></script>
-    <script src="{% static 'admin/admin/lib/easing/easing.min.js' %}"></script>
-    <script src="{% static 'admin/admin/lib/waypoints/waypoints.min.js' %}"></script>
-    <script src="{% static 'admin/admin/lib/owlcarousel/owl.carousel.min.js' %}"></script>
-    <script src="{% static 'admin/admin/lib/tempusdominus/js/moment.min.js' %}"></script>
-    <script src="{% static 'admin/admin/lib/tempusdominus/js/moment-timezone.min.js' %}"></script>
-    <script src="{% static 'admin/admin/lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js' %}"></script>
-
-    <!-- Template Javascript -->
-    <script src="{% static 'admin/admin/js/main.js' %}"></script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Get the chart data from the server-side
-            var worldwideData = JSON.parse('{{ worldwide_sales_chart_data|safe }}');
-            var salesRevenueData = JSON.parse('{{ sales_revenue_chart_data|safe }}');
-    
-            // Create and render the worldwide sales chart
-            var worldwideCtx = document.getElementById("worldwide-sales").getContext("2d");
-            new Chart(worldwideCtx, {
-                type: 'line',
-                data: worldwideData,
-                options: {
-                    // Chart options
-                }
-            });
-    
-            // Create and render the sales & revenue chart
-            var salesRevenueCtx = document.getElementById("sales-revenue").getContext("2d");
-            new Chart(salesRevenueCtx, {
-                type: 'bar',
-                data: salesRevenueData,
-                options: {
-                    // Chart options
-                }
-            });
-        });
-    </script>
-    
-</body>
-
-</html>
+                
+                </script>

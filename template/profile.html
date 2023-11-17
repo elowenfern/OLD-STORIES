@@ -36,9 +36,9 @@
 							<a class="nav-link" href="index.html">Home</a>
 						</li>
 						<li><a class="nav-link" href="{% url 'shop' %}">Shop</a></li>
-						<li><a class="nav-link" href="{% url 'sofa' %}">Sofa</a></li>
-						<li><a class="nav-link" href="{% url 'chair' %}">Office chairs</a></li>
+						
 						<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
+						<li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li>
 						
 					</ul>
 
@@ -96,15 +96,13 @@
                             </p> -->
                             <!-- Add a horizontal line -->
                             <!-- <hr> -->
-                           
                             <hr>
                     
                             <!-- Payment Method -->
-                            <p class="card-title"> <i class="fas fa-credit-card"   style="margin-right: 10px;"></i> <a href="#" style="color: black;">Payment method</a>
+                            <p class="card-title"> <i class="fas fa-credit-card"   style="margin-right: 10px;"></i> <a href="{% url 'wallet' %}" style="color: black;">Wallet</a>
                             </p>
                             <!-- Add a horizontal line -->
                             <hr>
-                           
                             <hr>
                             <!-- Address -->
                             <p class="card-title">  <i class="fas fa-map-marker-alt"  style="margin-right: 10px;"></i><a href="{% url 'address' %}" style="color: black;">Address</a>

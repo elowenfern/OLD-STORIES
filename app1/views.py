@@ -12,6 +12,7 @@ from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 import secrets
+from decimal import Decimal
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator
@@ -32,15 +33,32 @@ from xhtml2pdf import pisa
 from email import encoders
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
+from reportlab.platypus import SimpleDocTemplate
+from reportlab.lib.pagesizes import A4
+import matplotlib.pyplot as plt
+import io
+import base64
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib import colors
+from io import BytesIO
+from django.http import FileResponse
+from datetime import datetime
+from django.http import HttpResponse
+from reportlab.lib.styles import getSampleStyleSheet
+from .models import Order  # Replace 'yourapp' with the actual name of your Django app
+from reportlab.platypus import Table, TableStyle, Paragraph
+from reportlab.lib.units import inch
+from email.mime.text import MIMEText
+
 # Create your views here.
 def wallet(request):
-    user=request.user
-    customer=Customer.objects.get(email=user)
-    wallets= Wallet.objects.filter(user=user).order_by('-created_at')
-    # Assuming you have the 'wallet' object available
+    user = request.user
+    customer=CustomUser.objects.get(email=user)
+    wallet_transactions = Wallet.objects.filter(user=user).order_by('-created_at')
     context = {
+        'wallet_transactions': wallet_transactions,
         'customer':customer,
-        'wallets': wallets,
     }
     return render(request, 'wallet.html', context)
 # user-side search 
@@ -53,12 +71,10 @@ def search(request):
     if query:
         products = Product.objects.filter(
             models.Q(product_name__icontains=query) |
-            models.Q(category__category_name__icontains=query)
-            
+            models.Q(category__category_name__icontains=query)  
         )
     else:
-        products=Product.objects.all()
-        
+        products=Product.objects.all() 
     search_results = Product.objects.filter(product_name__icontains=query)
     context = {
         'products': products,
@@ -120,6 +136,7 @@ def invoice(request, id):
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def index(request):
+   
     section = Section.objects.filter(name='Top Deal Of The Day').first()
     if section:
         product = Product.objects.filter(section=section)
@@ -131,15 +148,17 @@ def index(request):
     }
     return render(request, 'index.html', context)
 def shop(request):
-    product=Product.objects.filter(deleted=False)
-    variation=Variation.objects.filter(deleted=False)
+    product=Product.objects.filter(deleted=False,category__active=True)
+    variations=Variation.objects.filter(deleted=False)
     unique_colors = Variation.objects.values('color').annotate(count=Count('color')).order_by('color')
 
     selected_color = request.GET.get('color')
     selected_price = request.GET.get('price')
-    variations=variation
+    selected_category = request.GET.get('category')
     if selected_color:
         variations = variations.filter(color=selected_color)
+    if selected_category:
+       product = product.filter(category__category_name=selected_category)
     
         # Define price ranges based on selected_price
     price_ranges = {
@@ -156,23 +175,27 @@ def shop(request):
             price_range = price_ranges[selected_price]
             # Filter for products with prices within the selected price range
             variations = variations.filter(price__range=price_range)
-
+     # Now, after all filtering, add discounted_price and offer_price attributes
+  
     context={
         'product':product,
         'variations':variations,
         'unique_colors':unique_colors,
+        'categories':Category.objects.filter(active=True),
     }
     return render(request, 'shop.html',context)
 def sofa(request):
-    sofa_pdt=Product.objects.filter(category__category_name='Sofa',deleted=False)
-    variation=Variation.objects.filter(deleted=False)
+    product=Product.objects.filter(deleted=False)
+    variations=Variation.objects.filter(deleted=False)
     unique_colors = Variation.objects.values('color').annotate(count=Count('color')).order_by('color')
 
     selected_color = request.GET.get('color')
     selected_price = request.GET.get('price')
-    variations=variation
+    selected_category = request.GET.get('category')
     if selected_color:
         variations = variations.filter(color=selected_color)
+    if selected_category:
+       product = product.filter(category__category_name=selected_category)
     
         # Define price ranges based on selected_price
     price_ranges = {
@@ -189,11 +212,13 @@ def sofa(request):
             price_range = price_ranges[selected_price]
             # Filter for products with prices within the selected price range
             variations = variations.filter(price__range=price_range)
-    print(sofa_pdt)
+     # Now, after all filtering, add discounted_price and offer_price attributes
+  
     context={
-        'sofa_pdt':sofa_pdt,
+        'product':product,
         'variations':variations,
         'unique_colors':unique_colors,
+        'categories':Category.objects.filter(active=True),
     }
     return render(request,'sofa.html',context)
 def chair(request):
@@ -233,9 +258,24 @@ def chair(request):
 def pdt_detials(request,id):
     product = get_object_or_404(Product, id=id)
     variation =Variation.objects.filter(product=product)
+    for variationn in variation:
+        discounted_price = None
+        offer_price = None
+    if product.category.category_offer:
+    # Calculate the discount amount as a percentage of the original price
+        discount_amount = (variationn.price * product.category.category_offer) / 100
+        # Subtract the discount amount from the original price to get the discounted price
+        discounted_price = variationn.price - discount_amount
+        variationn.discounted_price = discounted_price
+        offer_price = None
+    if product.product_offer:
+        offer_price = variationn.price - (variationn.price * product.product_offer / 100)
+        variationn.offer_price = offer_price
+
     context = {
         'product': product,
         'variation':variation,
+        'discounted_price': discounted_price,
     }
     return render(request, 'product_detials.html', context)
 
@@ -244,17 +284,16 @@ def display_variations(request,variation_id=None):
     if request.method == 'GET':
         selected_product_id = request.GET.get('selected_product_id')
         selected_color = request.GET.get('selected_color')
-        
         if variation_id:
             selected_variation = get_object_or_404(Variation, id=variation_id)
             selected_product_id = selected_variation.product.id  # Use the product associated with the selected variation
             selected_image = Variation_img.objects.filter(variation=selected_variation)
             variations = Variation.objects.filter(product=selected_variation.product)  # Filter variations by the product associated with the selected variation
-        elif selected_product_id:
+        if selected_product_id:
             product = get_object_or_404(Product, id=selected_product_id)
             variations = Variation.objects.filter(product=product)
             if selected_color:
-                selected_variation = Variation.objects.filter(id=selected_color).first()
+                selected_variation = get_object_or_404(Variation, id=selected_color)
                 selected_image     = Variation_img.objects.filter(variation_id = selected_color)
                 selected_product_id=selected_product_id
             else:
@@ -262,11 +301,33 @@ def display_variations(request,variation_id=None):
         else:
             selected_variation = None
             variations = Variation.objects.all()
+        for variation in variations:
+            discounted_price = None
+            offer_price = None
+        if selected_variation:
+            product = selected_variation.product
+            if product.category.category_offer:
+            # Calculate the discount amount as a percentage of the original price
+                discount_amount = (variation.price * product.category.category_offer) / 100
+                # Subtract the discount amount from the original price to get the discounted price
+                discounted_price = variation.price - discount_amount
+                # variation.discounted_price = discounted_price
+                # offer_price = None
+            if product.product_offer:
+                offer_price = variation.price - (variation.price * product.product_offer / 100)
+                # variation.offer_price = offer_price
+            final_price = min(discounted_price, offer_price) if discounted_price is not None and offer_price is not None else discounted_price or offer_price
+        
+            variation.discounted_price = discounted_price
+            variation.offer_price = offer_price
+            variation.final_price = final_price  # Add a field to store the final discounted/offer price
+            variation.save()
         context = {
             'selected_variation': selected_variation,
             'variations': variations,
             'selected_images' : selected_image
         }
+        print(f"selected_variation in view:................................ {selected_variation.final_price}")
         return render(request, 'display_variation.html', context)
     else:
         return redirect('product_detail') 
@@ -303,10 +364,7 @@ def collection(request):
         'category_product_mapping': category_product_mapping,
     }
     return render(request,'collection.html',context)
-@cache_control(no_cache=True,must_revalidate=True,no_store=True)
-@never_cache
-def contact(request):
-    return render(request,'contact.html')
+
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def cart(request):
@@ -314,10 +372,9 @@ def cart(request):
         user = request.user
         cart_items = Cart.objects.filter(user=user).order_by('id')
 
-        subtotal = cart_items.aggregate(subtotal=Sum(F('variation__price') * F('quantity')))['subtotal'] or 0
-        shipping_cost = 1500
-        total = subtotal + shipping_cost
-
+        subtotal = 0
+        
+        total_dict = {}
         quantity_added = request.GET.get('quantity', 0)
 
         for cart_item in cart_items:
@@ -325,7 +382,21 @@ def cart(request):
                 messages.warning(request, f"{cart_item.variation.product.product_name} is out of stock.")
                 cart_item.quantity = cart_item.variation.stock
                 cart_item.save()
+            elif cart_item.variation.product.category.category_offer:
+                item_price = (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.category.category_offer / 100)) * cart_item.quantity
+                total_dict[cart_item.id] = item_price
+                subtotal += item_price
+            elif cart_item.variation.product.product_offer:
+                item_price = (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer / 100)) * cart_item.quantity
+                total_dict[cart_item.id] = item_price
+                subtotal += item_price
+            else:
+                item_price = cart_item.variation.price * cart_item.quantity
+                total_dict[cart_item.id] = item_price
+                subtotal += item_price
 
+        shipping_cost = 1500
+        total = subtotal + shipping_cost
         cart_items_combined = [(cart_item, Variation_img.objects.filter(variation=cart_item.variation).first()) for cart_item in cart_items]
 
         context = {
@@ -337,7 +408,7 @@ def cart(request):
         }
     else:
         # Handle the case where the user is not authenticated, maybe redirect to a login page.
-        return redirect('login')
+        return redirect('loginpage')
     return render(request, 'cart.html', context)
 
 
@@ -366,7 +437,7 @@ def add_to_cart(request, id):
     else:
         request.session['cart_pending_variation_id'] = id
         request.session['cart_pending_quantity'] = request.POST.get('quantity', 1)
-        return redirect('login')
+        return redirect('loginpage')
 
 
 def update_cart(request, variationId):
@@ -395,8 +466,15 @@ def order_placed(request):
     cart_items = Cart.objects.filter(user=user)
     subtotal=0
     for cart_item in cart_items:
-        itemprice=(cart_item.variation.price)*(cart_item.quantity)
-        subtotal=subtotal+itemprice
+        if cart_item.variation.product.category.category_offer:
+            item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+            subtotal += item_price
+        elif cart_item.variation.product.product_offer:
+            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.product.product_offer/100)) * cart_item.quantity
+            subtotal=subtotal+itemprice
+        else:
+            itemprice=(cart_item.variation.price)*(cart_item.quantity)
+            subtotal=subtotal+itemprice
     shipping_cost = 1500 
    
     discount = request.session.get('discount', 0)
@@ -472,85 +550,85 @@ def remove_from_cart(request,id):
         pass
     
     return redirect('cart')
+
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def check_out(request):
-    
     user = request.user
     cart_items = Cart.objects.filter(user=user)
     current_date = timezone.now()
     coupons = Coupon.objects.filter(deleted=False, expiry_date__gte=current_date)
     subtotal = 0
+    sales_data = []
     for cart_item in cart_items:
-        itemprice = (cart_item.variation.price) * (cart_item.quantity)
-        subtotal = subtotal + itemprice
+        if cart_item.variation.product.category.category_offer:
+            item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+            subtotal += item_price
+        elif cart_item.variation.product.product_offer:
+            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
+            subtotal=subtotal+itemprice
+        else:
+            itemprice = (cart_item.variation.price) * (cart_item.quantity)
+            subtotal = subtotal + itemprice
+        sales_data.append({
+            'variation': cart_item.variation,
+            'quantity_sold': cart_item.quantity,
+        })
     shipping_cost = 1500
     coupon_discount = request.session.get('discount', 0)
 
     # Calculate the total by subtracting the coupon discount from the subtotal and adding the shipping cost
     total = max(subtotal - coupon_discount, 0) + shipping_cost if subtotal else 0
+    for sale_info in sales_data:
+        Sales.objects.create(variation=sale_info['variation'], quantity_sold=sale_info['quantity_sold'])
+    address = Address.objects.filter(user=user,is_deleted=False)
+    shipping =Shipping.objects.filter(user=user,is_deleted=False)
     
-    address = Address.objects.filter(user=user)
-    shipping =Shipping.objects.filter(user=user)
-
     context = {
         'cart_items': cart_items,
         'subtotal': subtotal,
         'total': total,
         'address': address,
         'shipping':shipping,
-        'itemprice': itemprice,
         'coupons':coupons
     }
     return render(request, 'checkout.html', context)
-
 #payment
 def proceedtopay(request):
-    print('hjbdshkbskdjg')
     cart = Cart.objects.filter(user=request.user)
     total = 0
     shipping = 1500
     subtotal=0
     for cart_item in cart:
-        if cart_item.variation.product.category.category_offer:   
-            itemprice=(cart_item.variation.price - cart_item.variation.product.category.category_offer)*(cart_item.quantity)
-            subtotal=subtotal+itemprice
-            
-        elif cart_item.variation.product.referral_offer:
-            itemprice = (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.referral_offer/100)) * cart_item.quantity
+        if cart_item.variation.product.category.category_offer:
+            item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+            subtotal += item_price
+        elif cart_item.variation.product.product_offer:
+            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
             subtotal=subtotal+itemprice
         else:
-
             itemprice=(cart_item.variation.price)*(cart_item.quantity)
             subtotal=subtotal+itemprice
-    for item in cart:
-        discount = request.session.get('discount', 0)
-    total=subtotal+shipping 
-    if discount:
-        total -= discount 
-        
-
     
-        
-
+    discount = request.session.get('discount', 0)
+    total=subtotal+shipping 
+    
     return JsonResponse({
         'total' : total
 
     })
 def razorpay(request):
-    print('................................................')
     user = request.user
     cart_items = Cart.objects.filter(user=user)
 
     subtotal = 0
     for cart_item in cart_items:
         if cart_item.variation.product.category.category_offer:
-                
-                itemprice=(cart_item.variation.price - cart_item.variation.product.category.category_offer)*(cart_item.quantity)
-                subtotal=subtotal+itemprice
-        elif cart_item.variation.product.referral_offer:
-                itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.referral_offer/100)) * cart_item.quantity
-                subtotal=subtotal+itemprice    
+            item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+            subtotal += item_price
+        elif cart_item.variation.product.product_offer:
+            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
+            subtotal=subtotal+itemprice  
         else:
                 itemprice=(cart_item.variation.price)*(cart_item.quantity)
                 subtotal=subtotal+itemprice
@@ -618,27 +696,18 @@ def update_order(request):
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
         status = request.POST.get('status')
-
-       
         try:
             order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
             return redirect('order') 
-        
         restock_products(order)
         order.status = status
         order.save()   
         messages.success(request, 'Order status updated successfully.')
-
         return redirect('order') 
-
     return redirect('admin')
 
 # end admin order
-
-
-
-
 
 def success(request):
     orders = Order.objects.latest('id')
@@ -646,14 +715,6 @@ def success(request):
         'orders'  : orders,
     }
     return render(request,'success.html',context)
-
-
-
-
-
-
-
-
 def changepassword(request):
     if request.method == 'POST':
         old_password = request.POST.get('old')
@@ -674,9 +735,6 @@ def changepassword(request):
         else:
             messages.error(request, 'Old password is incorrect.')
             return redirect('profile')
-
-
-
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def signup(request):
@@ -740,11 +798,8 @@ def signup(request):
         return redirect('verify_signup')
     
     return render(request,'signup.html')
-
-
 def validate_email(email):
     return '@' in email and '.' in email
-
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def verify_signup(request):
@@ -765,7 +820,7 @@ def verify_signup(request):
         
             auth.login(request,user)
             messages.success(request, "Signup successful!")
-            return redirect('login')
+            return redirect('loginpage')
         else:
             user.delete()
             messages.info(request,"invalid otp")
@@ -776,12 +831,8 @@ def verify_signup(request):
 
 def generate_otp(length = 6):
     return ''.join(secrets.choice("0123456789") for i in range(length))
-
-
-
-
 @never_cache
-def login(request):
+def loginpage(request):
     if 'email' in request.session:
         return redirect('index')
     else: 
@@ -814,7 +865,6 @@ def login(request):
                 return render(request, 'login.html', {'error_message': error_message})
         else:
             return render(request, 'login.html')
-    
 
 def forgotpassword(request):
     if request.method == 'POST':
@@ -847,9 +897,9 @@ def forgotpassword(request):
             
         except CustomUser.DoesNotExist:
             messages.info(request,"Email is not valid")
-            return redirect('login')
+            return redirect('loginpage')
     else:
-        return redirect('login')
+        return redirect('loginpage')
 
 
 def reset_password(request):
@@ -869,10 +919,10 @@ def reset_password(request):
                     del request.session['email'] 
                     del request.session['otp']
                     messages.success(request, 'Password reset successful. Please login with your new password.')
-                    return redirect('login')
+                    return redirect('loginpage')
                 except CustomUser.DoesNotExist:
                     messages.error(request, 'Failed to reset password. Please try again later.')
-                    return redirect('login')
+                    return redirect('loginpage')
             else:
                 messages.error(request, 'New password and confirm password do not match.')
                 return redirect('reset_password')
@@ -883,7 +933,7 @@ def reset_password(request):
         return render(request, 'passwordreset.html')
     
 @login_required
-@user_passes_test(lambda u: not u.is_staff, login_url='login') 
+@user_passes_test(lambda u: not u.is_staff, login_url='loginpage') 
 def profile(request):
     user=request.user
     context={
@@ -910,7 +960,7 @@ def update_profile(request):
 def address(request):
     # Assuming you have a foreign key from Address to the User model
     user = request.user
-    addresses = Address.objects.filter(user=user)
+    addresses = Address.objects.filter(user=user,is_deleted=False)
     context={
         'addresses':addresses,
     }
@@ -988,16 +1038,15 @@ def edit_address(request,id):
         context = {
             'address': address
         }
-    return render(request,'edit_address.html',context)
+    return render(request,'editaddress.html',context)
 
 
 def delete_address(request,id):
     try:
         address = Address.objects.get(id=id)
+        address.soft_delete()
     except Address.DoesNotExist:
         return render(request, 'Address_not_found.html')
-
-    address.delete()
     return redirect('address')
 def shipping_address(request):
     # Assuming you have a foreign key from Address to the User model
@@ -1073,14 +1122,13 @@ def shipping_edit_address(request,id):
         context = {
             'shipping': shipping
         }
-    return render(request,'edit_address.html',context)
+    return render(request,'editaddress.html',context)
 def shipping_delete_address(request,id):
     try:
         shipping = Shipping.objects.get(id=id)
+        shipping.soft_delete()
     except Shipping.DoesNotExist:
         return render(request, 'Address_not_found.html')
-
-    shipping.delete()
     return redirect('check_out')
 def restock_products(order):
     order_items = OrderItem.objects.filter(order=order)
@@ -1105,21 +1153,77 @@ def order_details(request,id):
         }
     return render(request,'order_details.html',context)
 def cancel_order(request, id):
+    user=request.user
+    usercustm=CustomUser.objects.get(email=user)
     order = Order.objects.get(id=id)
     order.status = 'cancelled'
     order.save()
-    return redirect('order_details', id)
+    if  order.status == 'cancelled' and  order.payment_type=='cod':
+        wallet= Wallet.objects.create(
+        user=user,
+        order= order,
+        amount= order.amount,
+        status='Credited',
+        )
+        wallet.save()
+        order.status='cancelled'
+        order.save()
+        Order_item_amount = Decimal(order.amount)
+        usercustm.wallet_bal+=Order_item_amount
+        usercustm.save()
+    elif  order.payment_type=='razorpay':
+        wallet= Wallet.objects.create(
+        user=user,
+        order= order,
+        amount= order.amount,
+        status='Credited',
+        )
+        wallet.save()
+        order.status='cancelled'
+        order.save()
+        Order_item_amount = Decimal(order.amount)
+        usercustm.wallet_bal+=Order_item_amount
+        print('wallte:',usercustm.wallet_bal)
+        usercustm.save()
+    restock_products(order)
+    order.status = 'cancelled'
+    order.save()
+    return redirect('order_details',id)
 def return_order(request,id):
-    try:
-        order=Order.objects.get(id=id)
-        if order.status == 'Completed':
-            order.status = 'return'
-            order.save()
-            return redirect('order_details',id=order.id)
-        else:
-            return HttpResponse("cannot return this order.")
-    except Order.DoesNotExist:
-        return HttpResponse("Order not found")
+    user=request.user
+    usercustm=CustomUser.objects.get(email=user)
+    order = Order.objects.get(id=id)
+    order.status='return'
+    order.save()
+    restock_products(order) 
+    if order.status == 'return' and order.payment_type == 'cod':
+        print("..................................")
+        wallet=Wallet.objects.create(
+            user=user,
+            order=order,
+            amount=order.amount,
+            status='Credited',
+        )
+        wallet.save()
+        Order_item_amount=Decimal(order.amount)
+        usercustm.wallet_bal+=Order_item_amount
+        usercustm.save()
+    elif order.status=='return' and order.payment_type=='razorpay':
+        wallet=Wallet.objects.create(
+        user=user,
+        order= order,
+        amount= order.amount,
+        status='Credited',
+        )
+        wallet.save()
+        order.status='return'
+        order.save()
+        Order_item_amount=Decimal(order.amount)
+        usercustm.wallet_bal+=Order_item_amount
+        usercustm.save()
+        return redirect('order_details',id)
+    else:
+        return HttpResponse("Cannot return the order.")
 
 
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
@@ -1151,8 +1255,211 @@ def admin(request):
 @never_cache
 def dashboard(request):
     if 'admin' in request.session:
-        return render(request,'dashboard.html')
-    return redirect('admin')
+        # Fetch top 5 products
+        products = Product.objects.order_by('-id')[:5]
+
+        # Fetch sales data for each product variation
+        sales_data = []
+        order_labels = []
+        order_amounts = []
+        stock_labels = []
+        stock_amounts = []
+
+        for product in products:
+            variations = Variation.objects.filter(product=product)
+            for variation in variations:
+                total_sales = Sales.objects.filter(variation=variation).aggregate(Sum('quantity_sold'))['quantity_sold__sum'] or 0
+                sales_data.append({
+                    'product_name': product.product_name,
+                    'variation_id': variation.id,
+                    'color': variation.color,
+                    'size': variation.size,
+                    'total_sales': total_sales,
+                })
+        
+         # Process data for bar chart (order distribution)
+                order_labels.append(f'Order {variation.id}')
+                order_amounts.append(variation.price)  # Use any field you want for the order amount
+
+                # Process data for pie chart (stock distribution)
+                stock_labels.append(f'{product.product_name} - {variation.color} - {variation.size}')
+                stock_amounts.append(variation.stock)
+
+        # Convert data to JSON format for JavaScript
+        sales_data_json = json.dumps(sales_data)
+        order_data = json.dumps(order_amounts)
+        stock_data = json.dumps(stock_amounts)
+
+        context = {
+            'sales_data': sales_data_json,
+            'order_labels': order_labels,
+            'order_data': order_data,
+            'stock_labels': stock_labels,
+            'stock_data': stock_data,
+        }
+        return render(request, 'dashboard.html', context)
+    else:
+        return redirect('admin')
+# Create bar chart function
+def create_bar_chart(labels, data, title):
+    plt.figure(figsize=(8, 6))
+    plt.bar(labels, data, color='skyblue')
+    plt.xlabel('Variations')
+    plt.ylabel('Total Sales')
+    plt.title(title)
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    chart_image = base64.b64encode(buffer.getvalue()).decode()
+    buffer.close()
+    return f'data:image/png;base64,{chart_image}'
+
+# pie chart function
+def create_pie_chart(labels, data, title):
+    plt.figure(figsize=(8, 8))
+    plt.pie(data, labels=labels, autopct='%1.1f%%', startangle=140)
+    plt.title(title)
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    chart_image = base64.b64encode(buffer.getvalue()).decode()
+    buffer.close()
+    return f'data:image/png;base64,{chart_image}'
+
+styles = getSampleStyleSheet()
+style = styles["Normal"]
+def report_generator(request, orders):
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+    story = []
+
+    data = [["Order ID","Total Quantity","Product IDs","Product Names","Amount"]]
+
+    for order in orders:
+        # Retrieve order items associated with the current order
+        order_items = OrderItem.objects.filter(order=order)
+        total_quantity = sum(item.quantity for item in order_items)
+
+        if order_items.exists():
+            product_ids = ", ".join([str(item.variation.product.id) for item in order_items])
+            product_names = ", ".join([f"{item.variation.product.product_name} - {item.variation.color}" for item in order_items])
+
+        else:
+            product_ids = "N/A"
+            product_names = "N/A"
+
+        data.append([order.id, total_quantity, product_ids,Paragraph(product_names, style), order.amount])
+
+    # Create a table with the data
+    table = Table(data, colWidths=[1 * inch, 1.5 * inch, 1.5 * inch, 3 * inch, 1 * inch])
+
+    # Style the table
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.gray),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ])
+    table.setStyle(table_style)
+
+    # Add the table to the story and build the document
+    story.append(table)
+    doc.build(story)
+
+    buf.seek(0)
+    return FileResponse(buf, as_attachment=True, filename='orders_report.pdf')
+
+def report_pdf_order(request):
+    if request.method == 'POST':
+        from_date = request.POST.get('from_date')
+        to_date = request.POST.get('to_date')
+        try:
+            from_date = datetime.strptime(from_date, '%Y-%m-%d').date()
+            to_date = datetime.strptime(to_date, '%Y-%m-%d').date()
+        except ValueError:
+            return HttpResponse('Invalid date format.')
+        orders = Order.objects.filter(date__range=[from_date, to_date]).order_by('-id')
+        return report_generator(request, orders)
+
+def chart_demo(request):
+    orders = Order.objects.order_by('-id')[:5]
+    labels = []
+    data = []
+    for order in orders:
+        labels.append(str(order.id))
+        data.append(order.amount)
+    context = {
+        'labels': json.dumps(labels),
+        'data': json.dumps(data),
+    }
+    return render(request, 'chart_demo.html', context)
+def contact(request):
+    context = {}  
+    if request.method=='POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+        # Save the message to the database
+        contact = Contact(name=name, email=email, message=request.POST.get('message'))
+        contact.save()
+
+        messages.success(request, 'Thank you for contacting us!')
+
+        return redirect('contact') 
+    return render(request,'contact.html',context)
+
+def adminside_message(request):
+    customer_messages=Contact.objects.all()
+    context={
+        'customer_messages':customer_messages
+    }
+    return render(request,'customer_message.html',context)
+def reply(request):
+    if request.method == 'POST':
+        user_email = request.POST.get('email')
+        message_content = request.POST.get('message')
+
+        subject = 'Message from OLDSTORIES'
+        from_email = 'oldstories076@gmail.com'
+        to_email = user_email.strip()
+
+        try:
+            # Check if the email exists in your Contact model
+            contact = Contact.objects.filter(email__iexact=to_email).first()
+
+            if contact is not None:
+                # Create the MIME message
+                msg = MIMEMultipart()
+                msg['From'] = from_email
+                msg['To'] = to_email
+                msg['Subject'] = subject
+                msg.attach(MIMEText(message_content, 'plain'))
+
+                # Connect to the server and send the email
+                smtp_server = 'smtp.gmail.com'
+                smtp_port = 587
+                smtp_username = 'oldstories076@gmail.com'
+                smtp_password = 'vafkburwcxgnoyix'
+                
+                server = smtplib.SMTP(smtp_server, smtp_port)
+                server.starttls()
+                server.login(smtp_username, smtp_password)
+                server.send_message(msg)
+                server.quit()
+
+                messages.success(request, 'Email sent successfully.')
+            else:
+                messages.error(request, 'Invalid email address. Please check the email.')
+        except Exception as e:
+            messages.error(request, f'Error sending email: {e}')
+    
+    return redirect('adminside_message')
+
+ 
 @never_cache
 def adminlogout(request):
     if 'admin' in request.session:
@@ -1198,10 +1505,10 @@ def update_category(request, id):
         category_name = request.POST.get('category_name')
         if category_name:
             category.category_name           =  category_name
-        category.description                 =  request.POST.get('description')
-        image                                =  request.FILES.get('image')
-        category.category_offer_description  =  request.POST.get('offer_details')
-        category.category_offer              =  request.POST.get('offer_price')
+            
+            image                                =  request.FILES.get('image')
+            category.category_offer_description  =  request.POST.get('offer_details')
+            category.category_offer              =  request.POST.get('offer_price')
         if image:
             category.image = image
         category.save()
@@ -1214,15 +1521,14 @@ def addcategory(request):
     if 'admin' in request.session:
         if request.method  == 'POST':
             category_name       =   request.POST['category_name'] 
-            description         =   request.POST['description']
-            offer_description   =   request.POST['offer_details']
-            offer_price         =   request.POST['offer_price']
-           
+            category_offer_description=request.POST.get('category_offer_description')
+            category_offer=request.POST.get('category_offer')
+            
+
             category = Category.objects.create(
                 category_name                =  category_name,
-                description                  =  description,
-                category_offer_description   =  offer_description,
-                category_offer               =  offer_price
+                category_offer_description   =  category_offer_description,
+                category_offer               =  category_offer
             
             )           
             category.save() 
@@ -1250,9 +1556,6 @@ def delete_category(request, category_id):
          category.save()
     except Category.DoesNotExist:
          return render(request, 'category_not_found.html')
-    
-   
-
     category = Category.objects.all()
     context={'category':category}
     
@@ -1267,16 +1570,15 @@ def update_category(request,category_id):
 
     if request.method == 'POST':
         category_name = request.POST.get('category_name')
+        category_offer_description  =request.POST.get('category_offer_description')
+        category_offer  =request.POST.get('category_offer')
         if category_name:
             category.category_name           =  category_name
-            category.description                 =  request.POST.get('description')
-            category.category_offer_description  =  request.POST.get('offer_details')
-            category.category_offer              =  request.POST.get('offer_price')
-
-        
-        category.save()
+            category.category_offer_description  = category_offer_description
+            category.category_offer              =category_offer
+           # Check for None or empty offer_price before assignment
+            category.save()
         return redirect('category')
-
     context = {'category': category}
     return render(request, 'edit_category.html', context)
 
@@ -1546,19 +1848,21 @@ def restore_variation(request, id):
 @never_cache 
 def addproduct(request):
     if 'admin' in request.session:
-        categories=Category.objects.all()
-        section = Section.objects.all()
+        categories=Category.objects.filter(active=True)
+        sections = Section.objects.all()
         if request.method == 'POST':
             product_name   =  request.POST.get('product_name')
             description    =  request.POST.get('description')
             subcategory_id =request.POST.get('subcategory_id')
+            section_name = request.POST.get('section')
             min_price      = request.POST.get('min_price')  
             max_price      = request.POST.get('max_price')
-            referral_offer = request.POST.get('referral_offer')
+            offer = request.POST.get('offer')
             image          =  request.FILES.get('image') 
             try:
                 subcategory_id=Sub_category.objects.get(id=subcategory_id)
                 main_category_id=subcategory_id.main_category_id
+                section = Section.objects.get(name=section_name)
             except Sub_category.DoesNotExist:
                 return HttpResponse("sub category not found")  
             product = Product.objects.create(
@@ -1569,10 +1873,12 @@ def addproduct(request):
                 min_price      =min_price,  
                 max_price      =max_price,
                 image          =image,
-                referral_offer=referral_offer,
+                product_offer  =offer,
             )
             return redirect('product')
-        context = {'categories': categories}
+        context = {'categories': categories,
+                    'sections': sections
+                   }
         return render(request, 'addproduct.html', context)
     else:
         return redirect('admin')
@@ -1616,25 +1922,22 @@ def update(request, product_id):
         name                    =   request.POST.get('section')
         section                 =   get_object_or_404(Section, name=name)
         product.section         =   section
-        min_price               =   request.POST.get('min_price')  
-        max_price               =   request.POST.get('max_price')
+        product.min_price               =   request.POST.get('min_price')  
+        product.max_price               =   request.POST.get('max_price')
         
         
         image                   =   request.FILES.get('image')
-        referral_offer          =   request.POST.get('referral_offer') 
+        product.product_offer          =   request.POST.get('offer') 
         images                  =   request.FILES.getlist('mulimage')
 
         if image:
             product.image = image
-
-        product.referral_offer = referral_offer
+        
         product.save()
-
         for img in images:
             product_image = Images(product=product)
             product_image.images = img
-            product_image.save()
-            
+            product_image.save()   
         return redirect('product') 
     else:
         context = {
@@ -1652,7 +1955,6 @@ def delete_product(request, product_id):
         product.save()
     except Product.DoesNotExist:
          return render(request, 'product_not_found.html')
-
     return redirect('product')
 
 def restore_product(request, product_id):
@@ -1662,7 +1964,6 @@ def restore_product(request, product_id):
         product.save()
     except Product.DoesNotExist:
         pass
-
     return redirect('product')
 
 
@@ -1768,14 +2069,17 @@ def delete_section(request, section_id):
     context={'section':section}
     return redirect('section')
 #wishlist
+
 def wish(request):
     user = request.user
+    if not user.is_authenticated:
+        # Redirect to the signup page
+        return redirect('signup')
     wishlist_items = Wishlist.objects.filter(user=user)
     variation_images = []
     for item in wishlist_items:
         # Retrieve the variation associated with the wishlist item
         variation = item.variation
-
         # Get the first image associated with the variation, if available.
         first_variation_image = Variation_img.objects.filter(variation=variation).first()
         variation_images.append(first_variation_image)
@@ -1820,8 +2124,14 @@ def addcoupon(request):
         discount_price  = request.POST.get('dprice')
         minimum_amount = request.POST.get('amount')
         expiry_date = request.POST.get('date')
+        if Coupon.objects.filter(coupon_code=coupon_code).exists():
+            messages.error(request, 'Coupon code already exists')
+            return redirect('coupon')
         if float(discount_price) < 0:
             messages.error(request, 'Discount price cannot be less than 0')
+            return redirect('coupon')
+        if float(minimum_amount) < 0:
+            messages.error(request, 'Minimum price cannot be less than 0')
             return redirect('coupon')
         coupon = Coupon(coupon_code=coupon_code, discount_price=discount_price, minimum_amount=minimum_amount,expiry_date=expiry_date)
         coupon.save()
@@ -1835,6 +2145,7 @@ def apply_coupon(request):
             coupon = Coupon.objects.get(coupon_code=coupon_code)
         except Coupon.DoesNotExist:
             messages.error(request, 'Invalid coupon code')
+            request.session['discount'] = 0
             return redirect('checkout')
 
         user = request.user
@@ -1850,9 +2161,14 @@ def apply_coupon(request):
                 messages.warning(request, f"{cart_item.variation.product.product_name} is out of stock.")
                 cart_item.quantity = cart_item.variation.stock
                 cart_item.save()
-
-           
-
+            if cart_item.variation.product.category.category_offer:
+                item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+                total_dict[cart_item.id] = item_price
+                subtotal += item_price
+            elif cart_item.variation.product.product_offer:
+                item_price = (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
+                total_dict[cart_item.id] = item_price
+                subtotal += item_price
             else:
                 item_price = cart_item.variation.price * cart_item.quantity
                 total_dict[cart_item.id] = item_price
@@ -1864,6 +2180,7 @@ def apply_coupon(request):
             total = subtotal - coupon.discount_price + shipping_cost
         else:
             messages.error(request, 'Coupon not available for this price')
+            request.session['discount'] = 0
             total = subtotal + shipping_cost
 
         for cart_item in cart_items:
@@ -1895,7 +2212,6 @@ def editcoupon(request,coupon_id):
             coupon = Coupon.objects.get(id=coupon_id)
         except Section.DoesNotExist:
             return render(request, 'subcategory_not_found.html')
-
         context = {'coupon': coupon}
         return render(request, 'edit_coupon.html', context)
     else:
@@ -1911,15 +2227,17 @@ def update_coupon(request, id):
         discount_price = request.POST.get('price')
         minimum_amount = request.POST.get('amount')
         expiry_date = request.POST.get('date')
-
+        
         # Check if coupon_code and discount_price are not null before updating
         if coupon_code:
             coupon.coupon_code = coupon_code
         if discount_price:
             coupon.discount_price = discount_price
+        if expiry_date:
+            coupon.expiry_date = expiry_date
 
         coupon.minimum_amount = minimum_amount
-        coupon.expiry_date = expiry_date
+        
         coupon.save()  # Save the updated coupon object here
 
         return redirect('coupon')
@@ -1947,3 +2265,6 @@ def restock_coupon(order):
         variation.stock += order_item.quantity
         variation.save()
 
+
+
+    

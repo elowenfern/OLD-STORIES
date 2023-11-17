@@ -45,12 +45,14 @@
 					<ul class="custom-navbar-nav navbar-nav ms-auto mb-2 mb-md-0">
 						
 							<a class="nav-link" href="{% url 'index' %}">Home</a>
-                        <li class="nav-item active"></li>
+                       
 						<li><a class="nav-link" href="{% url 'shop' %}">Shop</a></li>
-                        </li>
-						<li><a class="nav-link" href="">Collection</a></li>
+                        
+						
 						<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
 						<li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li>
+						
+						<!-- <li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li> -->
 					</ul>
 
 					<ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -119,7 +121,12 @@
             <h2>{{ product.product_name }}</h2>
             <p>{{ product.description }}</p>
             <p><strong>Price: {{ product.min_price }} - {{ product.max_price }}</strong></p>
-            
+            {% if product.category.category_offer %}
+            <h6 style="color: red;">{{product.category.category_offer}}% OFF </h6>
+            {% endif %}
+            {% if product.product_offer %}
+            <h6 style="color: red;">{{ product.product_offer}}% OFF</h6>
+            {% endif %}
             <form method="GET" action="{% url 'display_variations' %}" class="color-selection-form">
                 <input type="hidden" name="selected_product_id" value="{{ product.id }}">
                 <select name="selected_color" id="variation-select" class="form-control mb-3 select-color">

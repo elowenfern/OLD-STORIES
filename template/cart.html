@@ -38,9 +38,9 @@
 							<a class="nav-link" href="{% url 'index' %}">Home</a>
 						</li>
 						<li><a class="nav-link" href="{% url 'shop' %}">Shop</a></li>
-						<li><a class="nav-link" href="{% url 'sofa' %}">Sofa</a></li>
-						<li><a class="nav-link" href="{% url 'chair' %}">Office chairs</a></li>
+						
 						<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
+						<li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li>
 					</ul>
 
 					<ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -118,7 +118,15 @@
                           <td class="product-name">
                             <h2 class="h5 text-black">{{ cart_item.variation.product.product_name }}</h2>
                           </td>
-                          <td>₹{{ cart_item.variation.price }}</td>
+                          <td>
+							{% if cart_item.variation.product.category.category_offer %}
+							₹{{ cart_item.variation.final_price }}
+							{% elif cart_item.variation.product.product_offer %}
+							₹{{ cart_item.variation.final_price }}
+							{% else %}
+							₹{{cart_item.variation.price}}
+							{% endif %}
+						</td>
                           <td>
 							
                             <div class="input-group mb-3" style="max-width: 120px;">

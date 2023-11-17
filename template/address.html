@@ -39,9 +39,10 @@
 									<a class="nav-link" href="{% url 'index' %}">Home</a>
 								</li>
 								<li><a class="nav-link" href="{% url 'shop' %}">Shop</a></li>
-								<li><a class="nav-link" href="">Collection</a></li>
-								<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
-								<li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li>
+								
+						<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
+						<li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li>
+								<!-- <li><a class="nav-link" href="{% url 'contact' %}">Contact us</a></li> -->
 							</ul>
 		
 							<ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
@@ -100,7 +101,7 @@
                             <hr>
                     
                             <!-- Payment Method -->
-                            <p class="card-title"> <i class="fas fa-credit-card"   style="margin-right: 10px;"></i> <a href="#" style="color: black;">Payment method</a>
+                            <p class="card-title"> <i class="fas fa-credit-card"   style="margin-right: 10px;"></i><a href="{% url 'wallet' %}" style="color: black;">Wallet</a>
                             </p>
                             <!-- Add a horizontal line -->
                             <hr>
