@@ -157,7 +157,7 @@
                 <p><strong>Price:₹{{selected_variation.price}}</strong></p>
                 {% endif %}
             </div>
-            <p>Availability: <strong>{{selected_variation.stock}}</strong> In Stock</p>
+            <p>Availability: <strong>{{selected_variation.stock}} In stock</strong></p>
             
                 <!-- <form method="GET" action="{% url 'color' %}" class="color-selection-form" style="margin-bottom: 20px;">
         <input type="hidden" name="selected_product_id" value="{{ product.id }}">
@@ -170,21 +170,47 @@
         <button type="submit" class="btn btn-primary">Submit</button>
     </form> -->
             
-            <form method="POST" action="{% if user.is_authenticated %}{% url 'add_to_cart' selected_variation.id %}{% else %}{% url 'loginpage' %}?next={% url 'add_to_cart' selected_variation.id %}{% endif %}" style="margin-bottom:20px;">
+    <form method="POST" action="{% if user.is_authenticated and selected_variation and selected_variation.id %}{% url 'add_to_cart' selected_variation.id %}{% else %}{% url 'loginpage' %}?next={% if selected_variation and selected_variation.id %}{% url 'add_to_cart' selected_variation.id %}{% endif %}{% endif %}" style="margin-bottom:20px;">
                 {% csrf_token %}
                 <label for="quantity">Quantity:</label>
                 <input type="number" id="quantity" name="quantity" min="1" value="1" class="form-control mb-3"
                     style="width: 50px;">
-                <button type="submit" class="btn btn-primary"
-                    style="background-color: black; display: inline-block; margin-right: 10px;">Add to Cart</button>
+                    {% if selected_variation.stock > 0 %}
+                    <button type="button" id="add-to-cart-btn" class="btn btn-primary" style="background-color: black; display: inline-block; margin-right: 10px;">
+                    Add to Cart
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-secondary" disabled>
+                    Out of Stock
+                    </button>
+                    {% endif %}
             </form>
-            <a href="{% url 'add_to_wishlist' selected_variation.id %}" style="text-decoration: none;">
-                <button class="btn btn-primary" style="background-color: black; display: inline-block;">Add to
-                    Wishlist</button>
+            <a href="{% if selected_variation and selected_variation.id %}{% url 'add_to_wishlist' selected_variation.id %}{% endif %}" style="text-decoration: none;">
+                <button class="btn btn-primary" style="background-color: black; display: inline-block;">Add to Wishlist</button>
             </a>
+            
         </div>
     </div>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('add-to-cart-btn').addEventListener('click', function() {
+            var quantityInput = document.getElementById('quantity');
+            var selectedQuantity = parseInt(quantityInput.value);
+            var maxStock = {{ selected_variation.stock }};
+
+            if (selectedQuantity <= maxStock) {
+                // If the selected quantity is within the available stock, submit the form
+                quantityInput.setCustomValidity('');
+                this.form.submit();
+            } else {
+                // If the selected quantity is greater than the available stock, show an error message
+                quantityInput.setCustomValidity('Selected quantity exceeds available stock');
+                quantityInput.reportValidity();
+            }
+        });
+    });
+</script>
 <footer class="footer-section">
     <div class="container relative">
         <div class="sofa-img">

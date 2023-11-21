@@ -110,9 +110,7 @@
 						<li>
 							<a class="nav-link" href="{% url 'index' %}">Home</a>
 						</li>
-                        <li>
-							
-						</li>
+                        
 						<li class="nav-item active"><a class="nav-link" href="{% url 'shop' %}">Shop</a></li>
 						
 						<li><a class="nav-link" href="{% url 'about' %}">About us</a></li>
@@ -197,28 +195,33 @@
             {% endwith %}
             </a>
             <div class="card-body">
-                <div class="product-info" style="height: 300px;">
+                <div class="product-info" style="height: 390px;">
                     <p class="card-text" style="font-weight: bold">{{ var.product.product_name }}</p>
-                    <p class="card-text product-description" style="max-height: 100px; overflow: hidden;">{{ var.product.description }}</p>
+                    <p class="card-text">{{ var.product.description }}</p>
                     
                 </div>
             </div>
-            </div>
-            <div class="product-button" style="position: absolute; bottom: 10px; left: 10px;">
-                <a href=" /product_detials/{{ var.id }}" type="button" class="btn btn-sm btn-outline-secondary">₹{{var.price}}</a>
+           
+            <div class="product-button" style="position: absolute; bottom: 10px;">
+                {% if var.product.category.category_offer %}
+                <h6 style="color: red;">{{var.product.category.category_offer}}% OFF </h6>
+                {% endif %}
+                {% if var.product.product_offer %}
+                <h6 style="color: red;">{{ var.product.product_offer}}% OFF</h6>
+                {% endif %}
+                <a href="{% url 'display_variations' var.id %}" type="button" class="btn btn-sm btn-outline-secondary">₹{{var.price}}</a>
             </div>
         </div>
+   
         {% endfor %}
     {% else %}
-   
     {% for prod in product %}
     <div class="product-card card shadow-sm">
         <a href="/product_detials/{{ prod.id }}"><img src="{{ prod.image.url }}" class="card-img-top" alt="Product Image" style="width: 100%"></a>
         <div class="card-body">
             <div class="product-info" style="height: 390px;">
                 <p class="card-text" style="font-weight: bold">{{ prod.product_name }}</p>
-                <p class="card-text">{{ prod.description }}</p>
-             
+                <p class="card-text">{{ prod.description }}</p>            
             </div>
         </div>
             <div class="product-button" style="position: absolute; bottom: 10px; left: 10px;">
@@ -234,6 +237,7 @@
     {% endfor %}
     {% endif %}
         </div>
+    
     </form>
     </div>
   </div>

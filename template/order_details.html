@@ -85,10 +85,17 @@
             <p>Customer Name: {{ order.user.username }}</p>
             {% if order.shipping %}
             <p>Shipping Address: {{ order.shipping.house_no }}, {{ order.shipping.street }}, {{ order.shipping.city }}, {{ order.shipping.state }}, {{ order.shipping.post_code }}</p>
-        {% elif order.address %}
+            {% elif order.address %}
             <p>Shipping Address: {{ order.address.house_no }}, {{ order.address.street }}, {{ order.address.city }}, {{ order.address.state }}, {{ order.address.post_code }}</p>
-        {% endif %}
+            {% endif %}
         <a href="{% url 'invoice' id=order.id %}" class="btn-sm btn-outline-black"><button>download invoice</button></a>
+        {% if messages %}
+        <ul class="messages"style="color: green;">
+        {% for message in messages %}
+        <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+        </ul>
+        {% endif %}
         <hr style="border: 3px solid black;">
             <h3 style="color: black;">Order Items:</h3>
             <ul>

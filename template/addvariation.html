@@ -126,6 +126,14 @@
                                 <input type="submit" class="btn btn-success" value="Add">
                             </div>
                         </form>
+                        {% if messages %}
+  <ul class="messages" style="list-style-type: none; padding: 0; margin: 0; color: red;">
+    {% for message in messages %}
+      <li {% if message.tags %} class="{{ message.tags }}"{% endif %} style="color: red;">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
                     </div>
                 </div>
             </div>

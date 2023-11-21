@@ -104,7 +104,7 @@ class Product(models.Model):
     deleted        =     models.BooleanField(default=False)
     image          =     models.ImageField(upload_to='products/',blank=True,null=True)
     section        =     models.ForeignKey(Section,on_delete=models.CASCADE,blank=True,null=True)
-    product_offer =      models.DecimalField(max_digits=5, decimal_places=2,max_length=100, blank=True, null=True)
+    product_offer = models.PositiveBigIntegerField(default=0)
 class Images(models.Model):
     product     =  models.ForeignKey(Product, on_delete=models.CASCADE,related_name='product_images')
     images      =  models.ImageField(upload_to='products')

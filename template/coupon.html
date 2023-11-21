@@ -182,7 +182,13 @@
                                             </a>
                                             <form method="post" action="{% url 'delete_coupon' coupon.id %}">
                                                 {% csrf_token %}
-                                                <button type="submit" name="soft_delete" class="{% if coupon.deleted %}red-button{% endif %}">Soft Delete</button>
+                                            {% if not coupon.deleted %}
+                                                <a href="" class="delete" data-toggle="modal" data-target="#deleteModal{{ coupon.id }}">
+                                                <i class="material-icons" data-toggle="tooltip" title="Delete">&#xE872;</i>
+                                                </a>
+                                            {% else %}
+                                                <button type="submit" name="soft_delete">Soft Delete</button>
+                                            {% endif %}
                                             </form>
                                         </td>
                                     </tr> 
@@ -204,25 +210,7 @@
             </div>
 
             <!-- Soft Delete Modal -->
-<div class="modal fade" id="deleteModal{{ coupon.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                Are you sure you want to soft delete this item?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmSoftDelete">Delete</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 <!-- add_coupon_modal -->
 <div class="modal fade" id="exampleModalCenters" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
@@ -267,16 +255,18 @@
 
 </div>  
 <script>
-    $(document).ready(function () {
-        // Handle the soft delete action when the "Delete" button in the modal is clicked
-        $('#confirmSoftDelete').on('click', function () {
-            // Perform your soft delete logic here, e.g., make an AJAX request to mark the item as deleted in the database.
-            
-            // After successful deletion, you can close the modal
-            $('#deleteModal{{ coupon.id }}').modal('hide');
+    $(document).ready(function(){
+        $('#exampleModalCenters').modal(); // Initialize other modals if needed
+
+        // Handle Soft Delete button click
+        $('[data-target="#deleteModal"]').on('click', function() {
+            var couponId = $(this).data('coupon-id');
+            $('#deleteModal' + couponId).modal();
         });
     });
-</script>    
+</script>
+
+  
 
    
    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

@@ -50,7 +50,7 @@ from .models import Order  # Replace 'yourapp' with the actual name of your Djan
 from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.units import inch
 from email.mime.text import MIMEText
-
+from decimal import Decimal, ROUND_HALF_UP
 # Create your views here.
 def wallet(request):
     user = request.user
@@ -128,11 +128,10 @@ def invoice(request, id):
                 server.login(smtp_username, smtp_password)
                 server.sendmail(msg['From'], msg['To'], msg.as_string())
                 server.quit()
-
+                messages.success(request, 'Invoice sent successfully!')
             except Exception as e:
                 return HttpResponse(f'Email sending failed: {str(e)}')
-
-    return HttpResponse('Emails sent successfully!')
+    return redirect('order_details', id=id)
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def index(request):
@@ -176,83 +175,17 @@ def shop(request):
             # Filter for products with prices within the selected price range
             variations = variations.filter(price__range=price_range)
      # Now, after all filtering, add discounted_price and offer_price attributes
-  
+    variations = variations.order_by('price')
     context={
         'product':product,
         'variations':variations,
         'unique_colors':unique_colors,
         'categories':Category.objects.filter(active=True),
+        'selected_price': selected_price,
     }
     return render(request, 'shop.html',context)
-def sofa(request):
-    product=Product.objects.filter(deleted=False)
-    variations=Variation.objects.filter(deleted=False)
-    unique_colors = Variation.objects.values('color').annotate(count=Count('color')).order_by('color')
 
-    selected_color = request.GET.get('color')
-    selected_price = request.GET.get('price')
-    selected_category = request.GET.get('category')
-    if selected_color:
-        variations = variations.filter(color=selected_color)
-    if selected_category:
-       product = product.filter(category__category_name=selected_category)
-    
-        # Define price ranges based on selected_price
-    price_ranges = {
-        
-        "price1": (0, 500),
-        "price2": (500, 1000),
-        "price3": (1000, 5000),
-        "price4": (5000, 10000),
-        "price5": (10000, 25000),
-        "price6": (25000, 50000),
-        "price7": (50000, 1000000)  
-        }
-    if selected_price in price_ranges:
-            price_range = price_ranges[selected_price]
-            # Filter for products with prices within the selected price range
-            variations = variations.filter(price__range=price_range)
-     # Now, after all filtering, add discounted_price and offer_price attributes
-  
-    context={
-        'product':product,
-        'variations':variations,
-        'unique_colors':unique_colors,
-        'categories':Category.objects.filter(active=True),
-    }
-    return render(request,'sofa.html',context)
-def chair(request):
-    chair_pdt=Product.objects.filter(category__category_name='Office chairs',deleted=False)
-    variation=Variation.objects.filter(deleted=False)
-    unique_colors = Variation.objects.values('color').annotate(count=Count('color')).order_by('color')
-    print(chair_pdt)
-    selected_color = request.GET.get('color')
-    selected_price = request.GET.get('price')
-    variations=variation
-    if selected_color:
-        variations = variations.filter(color=selected_color)
-    
-        # Define price ranges based on selected_price
-    price_ranges = {
-        
-        "price1": (0, 500),
-        "price2": (500, 1000),
-        "price3": (1000, 5000),
-        "price4": (5000, 10000),
-        "price5": (10000, 25000),
-        "price6": (25000, 50000),
-        "price7": (50000, 1000000)  
-        }
-    if selected_price in price_ranges:
-            price_range = price_ranges[selected_price]
-            # Filter for products with prices within the selected price range
-            variations = variations.filter(price__range=price_range)
-    context={
-        'chair_pdt':chair_pdt,
-        'variations':variations,
-        'unique_colors':unique_colors,
-    }
-    return render(request,'chair.html',context)
+
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @never_cache    
 def pdt_detials(request,id):
@@ -292,46 +225,46 @@ def display_variations(request,variation_id=None):
         if selected_product_id:
             product = get_object_or_404(Product, id=selected_product_id)
             variations = Variation.objects.filter(product=product)
+            print(selected_product_id)
+            print(variations)
             if selected_color:
                 selected_variation = get_object_or_404(Variation, id=selected_color)
                 selected_image     = Variation_img.objects.filter(variation_id = selected_color)
                 selected_product_id=selected_product_id
-            else:
-                selected_variation = None
         else:
             selected_variation = None
             variations = Variation.objects.all()
         for variation in variations:
             discounted_price = None
             offer_price = None
-        if selected_variation:
-            product = selected_variation.product
-            if product.category.category_offer:
-            # Calculate the discount amount as a percentage of the original price
-                discount_amount = (variation.price * product.category.category_offer) / 100
-                # Subtract the discount amount from the original price to get the discounted price
-                discounted_price = variation.price - discount_amount
-                # variation.discounted_price = discounted_price
-                # offer_price = None
-            if product.product_offer:
-                offer_price = variation.price - (variation.price * product.product_offer / 100)
-                # variation.offer_price = offer_price
-            final_price = min(discounted_price, offer_price) if discounted_price is not None and offer_price is not None else discounted_price or offer_price
         
-            variation.discounted_price = discounted_price
-            variation.offer_price = offer_price
-            variation.final_price = final_price  # Add a field to store the final discounted/offer price
-            variation.save()
+        if selected_variation:
+                product = selected_variation.product
+                if product.category.category_offer:
+                # Calculate the discount amount as a percentage of the original price
+                    discount_amount = (variation.price * product.category.category_offer) / 100
+                    # Subtract the discount amount from the original price to get the discounted price
+                    discounted_price = variation.price - discount_amount
+                if product.product_offer:
+                    offer_price = variation.price - (variation.price * product.product_offer / 100)
+                    # variation.offer_price = offer_price
+                final_price = min(discounted_price, offer_price) if discounted_price is not None and offer_price is not None else discounted_price or offer_price
+            
+                variation.discounted_price = discounted_price
+                variation.offer_price = offer_price
+                variation.final_price = final_price  # Add a field to store the final discounted/offer price
+                variation.save()
+                print(f"selected_variation in view:................................ {selected_variation.final_price}")
+        
         context = {
             'selected_variation': selected_variation,
             'variations': variations,
             'selected_images' : selected_image
         }
-        print(f"selected_variation in view:................................ {selected_variation.final_price}")
+       
         return render(request, 'display_variation.html', context)
     else:
-        return redirect('product_detail') 
-
+        return redirect('product_detail')
 def color(request):
     selected_product_id = request.GET.get('selected_product_id', None)
     if request.method == 'POST':
@@ -346,8 +279,6 @@ def color(request):
     # Handle any other scenarios or errors here
     # You may want to display a message to the user or return to the product page
     return HttpResponseRedirect(reverse('pdt_detials', args=[selected_product_id]))
-
-
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def about(request):
@@ -364,41 +295,37 @@ def collection(request):
         'category_product_mapping': category_product_mapping,
     }
     return render(request,'collection.html',context)
-
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def cart(request):
     if request.user.is_authenticated:
         user = request.user
         cart_items = Cart.objects.filter(user=user).order_by('id')
-
-        subtotal = 0
-        
+        subtotal =Decimal('0.00') 
         total_dict = {}
         quantity_added = request.GET.get('quantity', 0)
-
         for cart_item in cart_items:
             if cart_item.quantity > cart_item.variation.stock:
                 messages.warning(request, f"{cart_item.variation.product.product_name} is out of stock.")
                 cart_item.quantity = cart_item.variation.stock
                 cart_item.save()
             elif cart_item.variation.product.category.category_offer:
-                item_price = (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.category.category_offer / 100)) * cart_item.quantity
+                item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.category.category_offer / Decimal(100)))) * cart_item.quantity
                 total_dict[cart_item.id] = item_price
                 subtotal += item_price
             elif cart_item.variation.product.product_offer:
-                item_price = (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer / 100)) * cart_item.quantity
+                item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.product_offer / Decimal(100)))) * cart_item.quantity
                 total_dict[cart_item.id] = item_price
                 subtotal += item_price
             else:
                 item_price = cart_item.variation.price * cart_item.quantity
                 total_dict[cart_item.id] = item_price
                 subtotal += item_price
-
-        shipping_cost = 1500
+        shipping_cost = Decimal('1500.00')
         total = subtotal + shipping_cost
+        subtotal = subtotal.quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
+        total = total.quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
         cart_items_combined = [(cart_item, Variation_img.objects.filter(variation=cart_item.variation).first()) for cart_item in cart_items]
-
         context = {
             'cart_items_combined': cart_items_combined,
             'subtotal': subtotal,
@@ -407,13 +334,9 @@ def cart(request):
             'cart_empty': not cart_items_combined 
         }
     else:
-        # Handle the case where the user is not authenticated, maybe redirect to a login page.
         return redirect('loginpage')
     return render(request, 'cart.html', context)
-
-
-
-
+@login_required
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_to_cart(request, id):
@@ -470,7 +393,7 @@ def order_placed(request):
             item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
             subtotal += item_price
         elif cart_item.variation.product.product_offer:
-            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.product.product_offer/100)) * cart_item.quantity
+            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
             subtotal=subtotal+itemprice
         else:
             itemprice=(cart_item.variation.price)*(cart_item.quantity)
@@ -478,9 +401,9 @@ def order_placed(request):
     shipping_cost = 1500 
    
     discount = request.session.get('discount', 0)
-    total = subtotal + shipping_cost - discount  if subtotal else 0
-    
-
+    total = max(subtotal - discount, 0) + shipping_cost if subtotal else 0
+    print(total)
+    print("...............................")
     if request.method == 'POST':
         payment       =    request.POST.get('payment')
         address_id    =    request.POST.get('addressId')
@@ -554,18 +477,19 @@ def remove_from_cart(request,id):
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def check_out(request):
+    request.session['discount'] = 0
     user = request.user
     cart_items = Cart.objects.filter(user=user)
     current_date = timezone.now()
     coupons = Coupon.objects.filter(deleted=False, expiry_date__gte=current_date)
-    subtotal = 0
+    subtotal =Decimal('0.00') 
     sales_data = []
     for cart_item in cart_items:
         if cart_item.variation.product.category.category_offer:
-            item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+            item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.category.category_offer / Decimal(100)))) * cart_item.quantity
             subtotal += item_price
         elif cart_item.variation.product.product_offer:
-            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
+            item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.product_offer / Decimal(100)))) * cart_item.quantity
             subtotal=subtotal+itemprice
         else:
             itemprice = (cart_item.variation.price) * (cart_item.quantity)
@@ -574,9 +498,10 @@ def check_out(request):
             'variation': cart_item.variation,
             'quantity_sold': cart_item.quantity,
         })
-    shipping_cost = 1500
+    shipping_cost = Decimal('1500.00')
     coupon_discount = request.session.get('discount', 0)
-
+    subtotal = subtotal.quantize(Decimal('0.00'), rounding=ROUND_HALF_UP)
+    
     # Calculate the total by subtracting the coupon discount from the subtotal and adding the shipping cost
     total = max(subtotal - coupon_discount, 0) + shipping_cost if subtotal else 0
     for sale_info in sales_data:
@@ -611,7 +536,9 @@ def proceedtopay(request):
             subtotal=subtotal+itemprice
     
     discount = request.session.get('discount', 0)
-    total=subtotal+shipping 
+    # Subtract the coupon discount from the subtotal
+    subtotal_after_discount = max(subtotal - discount, 0)
+    total=subtotal_after_discount+shipping 
     
     return JsonResponse({
         'total' : total
@@ -633,19 +560,21 @@ def razorpay(request):
                 itemprice=(cart_item.variation.price)*(cart_item.quantity)
                 subtotal=subtotal+itemprice
     shipping_cost = 1500 
-    total = subtotal + shipping_cost if subtotal else 0
-    print(subtotal)
+    discount = request.session.get('discount', 0)
+    # Subtract the coupon discount from the subtotal
+    subtotal_after_discount = max(subtotal - discount, 0)
+    total=subtotal_after_discount+shipping_cost
     payment  =  'razorpay'
     user     = request.user
     cart_items = Cart.objects.filter(user=user)
-    address_id = request.POST.get('address_id')
-    
-
-        
+    if request.method == 'POST':
+        data = request.json()  # Retrieve JSON data
+        address_id = data.get('addressId')
+        shipping_id = data.get('shippingId') 
     order = Order.objects.create(
         user          =     user,
         address_id      =     address_id,
-       
+        shipping_id     =     shipping_id,
         amount        =     total,
         payment_type  =     payment,
         )
@@ -664,7 +593,6 @@ def razorpay(request):
             )
         
     cart_items.delete()
-    print('succcccccccccccccccccccccccccccccc')
     return redirect('success')
     
 def restock_products(order):
@@ -1333,7 +1261,7 @@ def report_generator(request, orders):
     doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
     story = []
 
-    data = [["Order ID","Total Quantity","Product IDs","Product Names","Amount"]]
+    data = [["ID", "Date", "Total Quantity", "Product IDs", "Product Names", "Amount"]]
 
     for order in orders:
         # Retrieve order items associated with the current order
@@ -1348,11 +1276,9 @@ def report_generator(request, orders):
             product_ids = "N/A"
             product_names = "N/A"
 
-        data.append([order.id, total_quantity, product_ids,Paragraph(product_names, style), order.amount])
-
+        data.append([order.id, order.date.strftime('%Y-%m-%d'), total_quantity, product_ids, Paragraph(product_names, style), order.amount])
     # Create a table with the data
-    table = Table(data, colWidths=[1 * inch, 1.5 * inch, 1.5 * inch, 3 * inch, 1 * inch])
-
+    table = Table(data, colWidths=[0.7 * inch, 1.3 * inch, 1.5 * inch, 1.5 * inch, 2.5 * inch, 1 * inch])
     # Style the table
     table_style = TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.gray),
@@ -1361,7 +1287,7 @@ def report_generator(request, orders):
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 14),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ])
     table.setStyle(table_style)
@@ -1751,12 +1677,15 @@ def add_variation(request):
 
                 color = request.POST['color']
                 size = request.POST['size']
-                stock          =  request.POST['stock']
+                stock          =  int(request.POST['stock'])
                 price = request.POST['price']
                 variation_images = request.FILES.getlist('images')
                 image_ids = []
                 
-
+                if stock < 0:
+                    messages.error(request, "Stock cannot be a negative number.")
+                    return redirect('add_variation')
+                
                 variation = Variation.objects.create(
 
                     product=product,
@@ -1811,13 +1740,15 @@ def update_variation(request,id):
         size = request.POST['size']
         stock =   request.POST['stock']
         price = request.POST['price']
+        if int(stock) < 0:
+            messages.error(request, "Stock cannot be a negative number.")
+            return redirect('edit_variation', id=id)
         
-            
         variations.color = color
         variations.size = size
         variations.stock = stock
         variations.price = price
-        variations.price = variations.apply_discounts()
+        variations.price = variations.price
         variations.save()
         if 'multimage' in request.FILES:
            for image_file in request.FILES.getlist('multimage'):
@@ -2124,6 +2055,7 @@ def addcoupon(request):
         discount_price  = request.POST.get('dprice')
         minimum_amount = request.POST.get('amount')
         expiry_date = request.POST.get('date')
+        print(f"Expiry Date: {expiry_date}")
         if Coupon.objects.filter(coupon_code=coupon_code).exists():
             messages.error(request, 'Coupon code already exists')
             return redirect('coupon')
@@ -2136,18 +2068,15 @@ def addcoupon(request):
         coupon = Coupon(coupon_code=coupon_code, discount_price=discount_price, minimum_amount=minimum_amount,expiry_date=expiry_date)
         coupon.save()
         return redirect('coupon')
-
 def apply_coupon(request):
     if request.method == 'POST':
         coupon_code = request.POST.get('coupon_code')
-
         try:
             coupon = Coupon.objects.get(coupon_code=coupon_code)
         except Coupon.DoesNotExist:
             messages.error(request, 'Invalid coupon code')
             request.session['discount'] = 0
             return redirect('checkout')
-
         user = request.user
         cart_items = Cart.objects.filter(user=user)
         subtotal = 0
@@ -2173,7 +2102,6 @@ def apply_coupon(request):
                 item_price = cart_item.variation.price * cart_item.quantity
                 total_dict[cart_item.id] = item_price
                 subtotal += item_price
-
         if subtotal >= coupon.minimum_amount:
             messages.success(request, 'Coupon applied successfully')
             request.session['discount'] = coupon.discount_price
@@ -2188,7 +2116,6 @@ def apply_coupon(request):
             cart_item.save()
         address = Address.objects.filter(user=user)
         shipping = Shipping.objects.filter(user=user)
-
         context = {
             'cart_items': cart_items,
             'subtotal': subtotal,
@@ -2199,11 +2126,8 @@ def apply_coupon(request):
             'address': address,
             'shipping': shipping,
         }
-
         return render(request, 'checkout.html', context)
-
     return redirect('checkout')
-
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache  
 def editcoupon(request,coupon_id):
