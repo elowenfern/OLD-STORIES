@@ -30,7 +30,7 @@ urlpatterns = [
     path('order_placed/',views. order_placed,name='order_placed'),
     path('checkout/',views.check_out,name='check_out'),
     #razorpay
-    path('proceed-to-pay',views.proceedtopay,name='proceedtopay'),
+    path('proceed-to-pay',views.proceed_to_pay,name='proceed_to_pay'),
     path('razorpay/',views.razorpay,name='razorpay'),
     path('success/', views.success, name='success'),
     #contact

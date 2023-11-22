@@ -519,17 +519,17 @@ def check_out(request):
     }
     return render(request, 'checkout.html', context)
 #payment
-def proceedtopay(request):
+def proceed_to_pay(request):
     cart = Cart.objects.filter(user=request.user)
     total = 0
-    shipping = 1500
-    subtotal=0
+    shipping = Decimal(1500)
+    subtotal =Decimal('0.00') 
     for cart_item in cart:
         if cart_item.variation.product.category.category_offer:
-            item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+            item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.category.category_offer / Decimal(100)))) * cart_item.quantity
             subtotal += item_price
         elif cart_item.variation.product.product_offer:
-            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
+            item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.product_offer / Decimal(100)))) * cart_item.quantity
             subtotal=subtotal+itemprice
         else:
             itemprice=(cart_item.variation.price)*(cart_item.quantity)
@@ -544,22 +544,22 @@ def proceedtopay(request):
         'total' : total
 
     })
+
 def razorpay(request):
     user = request.user
     cart_items = Cart.objects.filter(user=user)
-
-    subtotal = 0
+    subtotal =Decimal('0.00') 
     for cart_item in cart_items:
         if cart_item.variation.product.category.category_offer:
-            item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+            item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.category.category_offer / Decimal(100)))) * cart_item.quantity
             subtotal += item_price
         elif cart_item.variation.product.product_offer:
-            itemprice =  (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
+            item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.product_offer / Decimal(100)))) * cart_item.quantity
             subtotal=subtotal+itemprice  
         else:
-                itemprice=(cart_item.variation.price)*(cart_item.quantity)
-                subtotal=subtotal+itemprice
-    shipping_cost = 1500 
+            itemprice=(cart_item.variation.price)*(cart_item.quantity)
+            subtotal=subtotal+itemprice
+    shipping_cost = Decimal(1500) 
     discount = request.session.get('discount', 0)
     # Subtract the coupon discount from the subtotal
     subtotal_after_discount = max(subtotal - discount, 0)
@@ -567,14 +567,13 @@ def razorpay(request):
     payment  =  'razorpay'
     user     = request.user
     cart_items = Cart.objects.filter(user=user)
-    if request.method == 'POST':
-        data = request.json()  # Retrieve JSON data
-        address_id = data.get('addressId')
-        shipping_id = data.get('shippingId') 
+     # Retrieve JSON data
+    address = Address.objects.filter(user=user)
+    if address.exists():
+        address = address.first() 
     order = Order.objects.create(
         user          =     user,
-        address_id      =     address_id,
-        shipping_id     =     shipping_id,
+        address      =     address,
         amount        =     total,
         payment_type  =     payment,
         )
@@ -590,8 +589,8 @@ def razorpay(request):
             variation       =     cart_item.variation,
             quantity      =     cart_item.quantity,
             image         =     variation_img.image 
-            )
-        
+        )
+            
     cart_items.delete()
     return redirect('success')
     
@@ -2079,8 +2078,8 @@ def apply_coupon(request):
             return redirect('checkout')
         user = request.user
         cart_items = Cart.objects.filter(user=user)
-        subtotal = 0
-        shipping_cost = 1500
+        subtotal =Decimal('0.00') 
+        shipping_cost = Decimal('1500.00')
         total_dict = {}
         coupons = Coupon.objects.all()
         request.session['discount'] = coupon.discount_price
@@ -2091,11 +2090,11 @@ def apply_coupon(request):
                 cart_item.quantity = cart_item.variation.stock
                 cart_item.save()
             if cart_item.variation.product.category.category_offer:
-                item_price = (cart_item.variation.price - (cart_item.variation.price*cart_item.variation.product.category.category_offer/100)) * cart_item.quantity
+                item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.category.category_offer / Decimal(100)))) * cart_item.quantity
                 total_dict[cart_item.id] = item_price
                 subtotal += item_price
             elif cart_item.variation.product.product_offer:
-                item_price = (cart_item.variation.price - (cart_item.variation.price * cart_item.variation.product.product_offer/100)) * cart_item.quantity
+                item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.product_offer / Decimal(100)))) * cart_item.quantity
                 total_dict[cart_item.id] = item_price
                 subtotal += item_price
             else:
@@ -2114,8 +2113,8 @@ def apply_coupon(request):
         for cart_item in cart_items:
             cart_item.total_price = total_dict.get(cart_item.id, 0)
             cart_item.save()
-        address = Address.objects.filter(user=user)
-        shipping = Shipping.objects.filter(user=user)
+        address = Address.objects.filter(user=user,is_deleted=False)
+        shipping = Shipping.objects.filter(user=user,is_deleted=False)
         context = {
             'cart_items': cart_items,
             'subtotal': subtotal,

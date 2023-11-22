@@ -1,25 +1,19 @@
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Attaching event listener');
     var payButton = document.getElementById('rzp-button1');
 
     payButton.addEventListener('click', function(event) {
         event.preventDefault();
+        console.log("Button clicked");
 
-        var addressId = document.querySelector("[name='addressId']").value;
-        var shippingId = document.querySelector("[name='shippingId']").value;
-        var csrfToken = document.querySelector("[name='csrfmiddlewaretoken']").value;
+        var selects = document.querySelector("[name='addressId']").value;
 
-        if (addressId === "" && shippingId === "")  {
+        if (selects === "") {
             swal("Alert", "Address field is needed", "error");
             return false;
         } else {
-            fetch('/proceed-to-pay',{
-                method: 'POST',
-                body: JSON.stringify({ addressId: addressId, shippingId: shippingId }),
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                }
-            })
+            console.log("Fetching data from /proceed-to-pay");
+            fetch('/proceed-to-pay')
                 .then(function(response) {
                     return response.json();
                 })
