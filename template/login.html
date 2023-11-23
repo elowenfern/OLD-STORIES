@@ -150,6 +150,7 @@ form .text h3 a:hover{
               <div class="text">
                 <a class="px-2" href="#" data-toggle="modal" data-target="#forgotPasswordModal">Forgot password</a>
                 <h3>Don't have an account? <a href="{% url 'signup' %}">Register</a></h3>
+                <h3><a href="{% url 'index' %}">Back Home</a></h3>
               </div>
               {% if error_message %}
                   <div class="alert alert-danger">

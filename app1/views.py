@@ -462,11 +462,7 @@ def order_placed(request):
             image         =     variation_img.image if variation_img else None,
         )
     cart_items.delete()
-    return redirect('success')
-
-
-
-           
+    return redirect('success')  
 @never_cache
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 def remove_from_cart(request,id):
@@ -680,6 +676,9 @@ def signup(request):
             if CustomUser.objects.filter(email = email).exists():
                 messages.info(request,"Email Already Taken")
                 return redirect('signup')
+            if not re.match(r'^[789]\d{9}$', phone_number):
+                messages.error(request, 'Please enter a valid 10-digit phone number starting with 7,8 or 9.')
+                return redirect('signup')
             elif CustomUser.objects.filter(phone_number = phone_number).exists():
                 messages.info(request,"phone number already taken")
                 return redirect('signup')
@@ -716,17 +715,14 @@ def verify_signup(request):
         'messages': messages.get_messages(request)
     }
     if request.method == "POST":
-        
         user      = CustomUser.objects.get(email=request.session['email'])
         x         =  request.session.get('otp')
-        OTP       =  request.POST['otp']
-      
+        OTP       =  request.POST['otp']     
         if OTP == x:
             user.is_verified = True
             user.save()
             del request.session['email'] 
-            del request.session['otp']
-        
+            del request.session['otp']        
             auth.login(request,user)
             messages.success(request, "Signup successful!")
             return redirect('loginpage')
@@ -754,7 +750,6 @@ def loginpage(request):
                 request.session['email'] = email
                 variation_id = request.session.get('cart_pending_product_id')
                 quantity = request.session.get('cart_pending_quantity')
-
                 if variation_id and quantity:
                     try:
                         variation = Variation.objects.get(id=variation_id)
@@ -774,11 +769,9 @@ def loginpage(request):
                 return render(request, 'login.html', {'error_message': error_message})
         else:
             return render(request, 'login.html')
-
 def forgotpassword(request):
     if request.method == 'POST':
         email = request.POST.get('email')
-
         try:
             customer = CustomUser.objects.get(email=email)
            
@@ -816,7 +809,6 @@ def reset_password(request):
         entered_otp = request.POST.get('otp')
         new_password = request.POST.get('new_password')
         confirm_password = request.POST.get('confirm_password')
-
         stored_otp = request.session.get('otp')
         if entered_otp == stored_otp:
             if new_password == confirm_password:
@@ -856,6 +848,13 @@ def update_profile(request):
         new_name=request.POST['name']
         new_mail=request.POST['email']
         new_phone_number=request.POST['phone_number']
+        if not is_valid_email(new_mail):
+            messages.error(request, 'Please enter a valid email address.')
+            return redirect('profile')
+        # Validate phone number
+        if not re.match(r'^[789]\d{9}$', new_phone_number):
+            messages.error(request, 'Please enter a valid 10-digit phone number starting with 7,8 or 9.')
+            return redirect('profile')
 
     # update the users info
         user.username=new_name
@@ -865,7 +864,9 @@ def update_profile(request):
         messages.success(request,'Profile updated successfully!!!')
         return redirect('profile')
     return render(request,'profile.html')
-
+def is_valid_email(email):
+    pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return re.match(pattern, email)
 def address(request):
     # Assuming you have a foreign key from Address to the User model
     user = request.user
@@ -889,8 +890,8 @@ def add_address(request):
                 messages.error(request, 'Please fill in all required fields.')     
         elif post_code and not re.match(r'^\d{6}$', post_code):
                 messages.error(request, 'Please enter a valid 6-digit post code.')
-        elif not re.match(r'^[89]\d{9}$', phone_no):
-                messages.error(request, 'Please enter a valid 10-digit phone number starting with 9 or 8.')
+        elif not re.match(r'^[789]\d{9}$', phone_no):
+                messages.error(request, 'Please enter a valid 10-digit phone number starting with 7,8 or 9.')
         else:
             user=request.user
             address = Address(
@@ -1165,14 +1166,12 @@ def dashboard(request):
     if 'admin' in request.session:
         # Fetch top 5 products
         products = Product.objects.order_by('-id')[:5]
-
         # Fetch sales data for each product variation
         sales_data = []
         order_labels = []
         order_amounts = []
         stock_labels = []
         stock_amounts = []
-
         for product in products:
             variations = Variation.objects.filter(product=product)
             for variation in variations:
@@ -1197,7 +1196,6 @@ def dashboard(request):
         sales_data_json = json.dumps(sales_data)
         order_data = json.dumps(order_amounts)
         stock_data = json.dumps(stock_amounts)
-
         context = {
             'sales_data': sales_data_json,
             'order_labels': order_labels,
@@ -1755,7 +1753,6 @@ def restore_variation(request, id):
 def addproduct(request):
     if 'admin' in request.session:
         categories=Category.objects.filter(active=True)
-        subcategory=Sub_category.objects.filter(active=T)
         sections = Section.objects.all()
         if request.method == 'POST':
             product_name   =  request.POST.get('product_name')
