@@ -51,6 +51,7 @@ from reportlab.platypus import Table, TableStyle, Paragraph
 from reportlab.lib.units import inch
 from email.mime.text import MIMEText
 from decimal import Decimal, ROUND_HALF_UP
+
 # Create your views here.
 def wallet(request):
     user = request.user
@@ -254,7 +255,6 @@ def display_variations(request,variation_id=None):
                 variation.offer_price = offer_price
                 variation.final_price = final_price  # Add a field to store the final discounted/offer price
                 variation.save()
-                print(f"selected_variation in view:................................ {selected_variation.final_price}")
         
         context = {
             'selected_variation': selected_variation,
@@ -282,7 +282,11 @@ def color(request):
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def about(request):
-    return render(request,'about.html')
+    product=Product.objects.filter(deleted=False,category__active=True)
+    context={
+        'product':product,
+    }
+    return render(request,'about.html',context)
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache
 def collection(request):
@@ -341,12 +345,14 @@ def cart(request):
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_to_cart(request, id):
     if request.user.is_authenticated:
+        wishlist_item = get_object_or_404(Wishlist, user=request.user, variation_id=id)
+        wishlist_item.delete()
         try:
             variation = Variation.objects.get(id=id)
         except Variation.DoesNotExist:
             return redirect('product_not_found')
         quantity = request.POST.get('quantity', 1)
-
+    
         if not quantity:
             quantity = 1
         else:
@@ -361,8 +367,6 @@ def add_to_cart(request, id):
         request.session['cart_pending_variation_id'] = id
         request.session['cart_pending_quantity'] = request.POST.get('quantity', 1)
         return redirect('loginpage')
-
-
 def update_cart(request, variationId):
     cart_item = None
    
@@ -577,30 +581,25 @@ def razorpay(request):
         amount        =     total,
         payment_type  =     payment,
         )
-
     for cart_item in cart_items:
         variation = cart_item.variation
         variation.stock -= cart_item.quantity
         variation.save()
         variation_img = Variation_img.objects.filter(variation=variation).first()
-
         order_item = OrderItem.objects.create(
             order         =     order,
             variation       =     cart_item.variation,
             quantity      =     cart_item.quantity,
             image         =     variation_img.image 
-        )
-            
+        )          
     cart_items.delete()
-    return redirect('success')
-    
+    return redirect('success')  
 def restock_products(order):
     order_items = OrderItem.objects.filter(order=order)
     for order_item in order_items:
         variation = order_item.variation
         variation.stock += order_item.quantity
         variation.save()
-
 # admin side order
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache     
@@ -617,8 +616,6 @@ def order(request):
         return render(request, 'order.html', context)
     else:
         return redirect('admin')
-
-
 def update_order(request):
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
@@ -633,9 +630,7 @@ def update_order(request):
         messages.success(request, 'Order status updated successfully.')
         return redirect('order') 
     return redirect('admin')
-
 # end admin order
-
 def success(request):
     orders = Order.objects.latest('id')
     context = {
@@ -647,9 +642,7 @@ def changepassword(request):
         old_password = request.POST.get('old')
         new_password = request.POST.get('new_password1')
         confirm_password = request.POST.get('new_password2')
-
         customer = CustomUser.objects.get(username=request.user.username)
-
         if customer.check_password(old_password):
             if new_password == confirm_password:
                 customer.set_password(new_password)
@@ -673,24 +666,17 @@ def signup(request):
         phone_number=request.POST['phone_no']
         password=request.POST['password']
         confirmpassword=request.POST['confirmpassword']
-
         user=authenticate(email=email,password=password)
-
-       
-
         if not (name and email and password and phone_number and confirmpassword):
             messages.info(request,"PLease Fill Required field")
-            return redirect('signup')
-        
+            return redirect('signup')       
         elif password != confirmpassword:
             messages.info(request,"Password Mismatch")
-            return redirect('signup')
-        
+            return redirect('signup')        
         else:
             if not validate_email(email):
                 messages.error(request, 'Please enter a valid email address.')
-                return redirect('signup')
-             
+                return redirect('signup')            
             if CustomUser.objects.filter(email = email).exists():
                 messages.info(request,"Email Already Taken")
                 return redirect('signup')
@@ -699,20 +685,16 @@ def signup(request):
                 return redirect('signup')
             else:
                 my_user=CustomUser.objects.create_user(username=name,email=email,password=password,phone_number=phone_number)
-                my_user.save()
-
-    
+                my_user.save()    
         message = generate_otp()
         sender_email = "oldstories076@gmail.com"
         receiver_mail = email
         password_email = "vafkburwcxgnoyix"
-
         try:
             with smtplib.SMTP("smtp.gmail.com", 587) as server:
                 server.starttls()
                 server.login(sender_email, password_email)
                 server.sendmail(sender_email, receiver_mail, message)
-
         except smtplib.SMTPAuthenticationError:
             messages.error(request, 'Failed to send OTP email. Please check your email configuration.')
             return redirect('signup')
@@ -978,11 +960,11 @@ def delete_address(request,id):
 def shipping_address(request):
     # Assuming you have a foreign key from Address to the User model
     user = request.user
-    shipping = Shipping.objects.filter(user=user)
+    shipping = Shipping.objects.filter(user=user,is_deleted=False)
     context={
         'shipping':shipping,
     }
-    return render(request,'checkout.html',context)
+    return render(request,'shipping.html',context)
 
 def shipping_add_address(request):
     if request.method == 'POST':
@@ -998,7 +980,7 @@ def shipping_add_address(request):
                 messages.error(request, 'Please fill in all required fields.')
                 return redirect('check_out')
         if post_code and not re.match(r'^\d{6}$', post_code):
-                messages.error(request, 'Please enter a valid 7-digit post code.')
+                messages.error(request, 'Please enter a valid 6-digit post code.')
                 return redirect('check_out')
         if not re.match(r'^[89]\d{9}$', phone_no):
                 messages.error(request, 'Please enter a valid 10-digit phone number starting with 9 or 8.')
@@ -1043,8 +1025,7 @@ def shipping_edit_address(request,id):
 
         # Save the updated address to the database
         shipping.save()
-
-        return redirect('check_out')
+        return redirect('shipping_address')
     else:
         context = {
             'shipping': shipping
@@ -1056,7 +1037,7 @@ def shipping_delete_address(request,id):
         shipping.soft_delete()
     except Shipping.DoesNotExist:
         return render(request, 'Address_not_found.html')
-    return redirect('check_out')
+    return redirect('shipping_address')
 def restock_products(order):
     order_items = OrderItem.objects.filter(order=order)
     for order_item in order_items:
@@ -1328,15 +1309,18 @@ def contact(request):
         name = request.POST.get('name')
         email = request.POST.get('email')
         message = request.POST.get('message')
+        if not v_email(email):
+            messages.error(request, 'Please enter a valid email address.')
+            return redirect('contact')
         # Save the message to the database
         contact = Contact(name=name, email=email, message=request.POST.get('message'))
         contact.save()
-
         messages.success(request, 'Thank you for contacting us!')
-
         return redirect('contact') 
     return render(request,'contact.html',context)
-
+def v_email(email):
+    pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return re.match(pattern, email)
 def adminside_message(request):
     customer_messages=Contact.objects.all()
     context={
@@ -1347,15 +1331,12 @@ def reply(request):
     if request.method == 'POST':
         user_email = request.POST.get('email')
         message_content = request.POST.get('message')
-
         subject = 'Message from OLDSTORIES'
         from_email = 'oldstories076@gmail.com'
         to_email = user_email.strip()
-
         try:
             # Check if the email exists in your Contact model
             contact = Contact.objects.filter(email__iexact=to_email).first()
-
             if contact is not None:
                 # Create the MIME message
                 msg = MIMEMultipart()
@@ -1363,7 +1344,6 @@ def reply(request):
                 msg['To'] = to_email
                 msg['Subject'] = subject
                 msg.attach(MIMEText(message_content, 'plain'))
-
                 # Connect to the server and send the email
                 smtp_server = 'smtp.gmail.com'
                 smtp_port = 587
@@ -1375,16 +1355,12 @@ def reply(request):
                 server.login(smtp_username, smtp_password)
                 server.send_message(msg)
                 server.quit()
-
                 messages.success(request, 'Email sent successfully.')
             else:
                 messages.error(request, 'Invalid email address. Please check the email.')
         except Exception as e:
             messages.error(request, f'Error sending email: {e}')
-    
     return redirect('adminside_message')
-
- 
 @never_cache
 def adminlogout(request):
     if 'admin' in request.session:
@@ -1779,6 +1755,7 @@ def restore_variation(request, id):
 def addproduct(request):
     if 'admin' in request.session:
         categories=Category.objects.filter(active=True)
+        subcategory=Sub_category.objects.filter(active=T)
         sections = Section.objects.all()
         if request.method == 'POST':
             product_name   =  request.POST.get('product_name')
@@ -2055,9 +2032,6 @@ def addcoupon(request):
         minimum_amount = request.POST.get('amount')
         expiry_date = request.POST.get('date')
         print(f"Expiry Date: {expiry_date}")
-        if Coupon.objects.filter(coupon_code=coupon_code).exists():
-            messages.error(request, 'Coupon code already exists')
-            return redirect('coupon')
         if float(discount_price) < 0:
             messages.error(request, 'Discount price cannot be less than 0')
             return redirect('coupon')
@@ -2083,7 +2057,6 @@ def apply_coupon(request):
         total_dict = {}
         coupons = Coupon.objects.all()
         request.session['discount'] = coupon.discount_price
-
         for cart_item in cart_items:
             if cart_item.quantity > cart_item.variation.stock:
                 messages.warning(request, f"{cart_item.variation.product.product_name} is out of stock.")

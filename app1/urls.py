@@ -14,8 +14,6 @@ urlpatterns = [
     path('display_variations/<int:variation_id>/', views.display_variations, name='display_variations'),
     path('color/',views.color,name='color'),
     path('about/',views.about,name='about'),
-    #category page
-   
     #salesreprt
     path('report-pdf-order/', views.report_pdf_order, name='report_pdf_order'),
     path('chart-demo/', views.chart_demo, name='chart_demo'),
@@ -89,7 +87,6 @@ urlpatterns = [
     path('order/',views.order,name='order'),
     path('update_order/',views.update_order,name='update_order'),
     #variations
-    # path('variations/',views.variations,name='variations'),
     path('variations/<int:product_id>/',views.variations,name='variations'),
     path('addvariation/',views.add_variation,name='add_variation'),
     path('editvariation/<int:id>/',views.edit_variation,name='edit_variation'),

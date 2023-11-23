@@ -88,6 +88,10 @@
                         </p>
                         <!-- Add a horizontal line -->
                         <hr>
+                        <hr>                           
+                            <p class="card-title"><i class="fas fa-map-marker-alt"  style="margin-right: 10px;"></i><a href="{% url 'shipping_address' %}" style="color: black;">Shipping Address</a>
+                            </p>                           
+                        <hr>
                         <!-- Logout -->
                         <p class="card-title"> <i class="fas fa-sign-out-alt" style="margin-right: 10px;"></i> <a href="{% url 'logoutpage' %}" style="color: black;">Logout</a>
                         </p>
@@ -97,39 +101,56 @@
                 </div>
             </div>
 
-        <div class="col-md-8">
-            <!-- Add Address Form -->
-            <h1>Edit Address</h1>
-            <form method="post">
-                {% csrf_token %}
-                
-                <!-- Existing address data to populate the fields -->
-                <input type="hidden" name="address_id" value="{{ address.id }}">
-                
-                <label for="full_name">Full Name:</label>
-                <input type="text" id="full_name" name="full_name" required value="{{ address.full_name }}"><br><br>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="card-title mb-4">Edit Address</h1>
+                        <form method="post">
+                            {% csrf_token %}
+                            <!-- Existing address data to populate the fields -->
+                            <input type="hidden" name="address_id" value="{{ address.id }}">
             
-                <label for="house_no">House No:</label>
-                <input type="text" id="house_no" name="house_no" required value="{{ address.house_no }}"><br><br>
+                            <div class="mb-3">
+                                <label for="full_name" class="form-label">Full Name:</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" required value="{{ address.full_name }}">
+                            </div>
             
-                <label for="post_code">Post Code:</label>
-                <input type="text" id="post_code" name="post_code" required value="{{ address.post_code }}"><br><br>
+                            <div class="mb-3">
+                                <label for="house_no" class="form-label">House No:</label>
+                                <input type="text" class="form-control" id="house_no" name="house_no" required value="{{ address.house_no }}">
+                            </div>
             
-                <label for="state">State:</label>
-                <input type="text" id="state" name="state" required value="{{ address.state }}"><br><br>
+                            <div class="mb-3">
+                                <label for="post_code" class="form-label">Post Code:</label>
+                                <input type="text" class="form-control" id="post_code" name="post_code" required value="{{ address.post_code }}">
+                            </div>
             
-                <label for="street">Street:</label>
-                <input type="text" id="street" name="street" required value="{{ address.street }}"><br><br>
+                            <div class="mb-3">
+                                <label for="state" class="form-label">State:</label>
+                                <input type="text" class="form-control" id="state" name="state" required value="{{ address.state }}">
+                            </div>
             
-                <label for="phone_no">Phone No:</label>
-                <input type="text" id="phone_no" name="phone_no" value="{{ address.phone_no }}"><br><br>
+                            <div class="mb-3">
+                                <label for="street" class="form-label">Street:</label>
+                                <input type="text" class="form-control" id="street" name="street" required value="{{ address.street }}">
+                            </div>
             
-                <label for="city">City:</label>
-                <input type="text" id="city" name="city" required value="{{ address.city }}"><br><br>
+                            <div class="mb-3">
+                                <label for="phone_no" class="form-label">Phone No:</label>
+                                <input type="text" class="form-control" id="phone_no" name="phone_no" value="{{ address.phone_no }}">
+                            </div>
             
-                <button type="submit" class="btn btn-success">Update Address</button>
-            </form>
-        </div>
+                            <div class="mb-3">
+                                <label for="city" class="form-label">City:</label>
+                                <input type="text" class="form-control" id="city" name="city" required value="{{ address.city }}">
+                            </div>
+            
+                            <button type="submit" class="btn btn-success">Update Address</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
             
     </div>
    

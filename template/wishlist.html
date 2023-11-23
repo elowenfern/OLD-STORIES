@@ -108,8 +108,10 @@
 						<h3>{{item.variation.product.product_name}}</h3>
 						<p>Price:₹{{item.variation.price}}</p>
 					</div>
-					<button class="add-to-cart"> <a href="{% url 'add_to_cart' item.variation.id %}">Move to Cart</a></button>
-					<button class="remove-from-wishlist"> <a href="{% url 'remove_from_wishlist' item.id %}">Remove from Wishlist</a></button>
+					<button class="btn btn-md btn-block btn-primary font-weight-bold my-3 py-3" style="background-color: rgb(14, 69, 77);"><a href="{% url 'add_to_cart' item.variation.id %}" style="color: white; text-decoration: none;">Move to Cart</a></button>
+                  <button  class="btn btn-md btn-block btn-primary font-weight-bold my-3 py-3" style="background-color: rgb(14, 69, 77);"> <a href="{% url 'remove_from_wishlist' item.id %}" style="color: white; text-decoration: none;">Remove from Wishlist</a></button>
+					<!-- <button class="add-to-cart"> <a href="{% url 'add_to_cart' item.variation.id %}">Move to Cart</a></button>
+					<button class="remove-from-wishlist"> <a href="{% url 'remove_from_wishlist' item.id %}">Remove from Wishlist</a></button> -->
 				</li>
 				<div>
                 </div>

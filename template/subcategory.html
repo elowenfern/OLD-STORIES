@@ -150,7 +150,7 @@
                                     <td>{{ sub.main_category.category_name }}</td>
                                         <td>
                                             <a href="{% url 'edit_sub_category' sub_category_id=sub.id %}" class="edit" data-toggle="modal"><i class="material-icons" data-toggle="tooltip" title="Edit">&#xE254;</i></a>
-                                            <a href="" class="toggle-active" data-toggle="modal" data-target="#toggleActiveModal{{ sub_category.id }}">
+                                            <a href="" class="toggle-active" data-toggle="modal" data-target="#toggleActiveModal{{ sub.id }}">
                                                 {% if sub.active %}
                                                 Deactivate
                                                 {% else %}
@@ -207,7 +207,7 @@
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                                         <form action="{% url 'delete_sub_category' sub_id=sub.id %}" method="post">
                                             {% csrf_token %}
-                                            <input type="submit" class="btn btn-danger" value="{% if sub_category.active %}Deactivate{% else %}Activate{% endif %}">
+                                            <input type="submit" class="btn btn-danger" value="{% if sub.active %}Deactivate{% else %}Activate{% endif %}">
                                         </form>
                                     </div>
                                 </div>
