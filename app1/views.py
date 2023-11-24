@@ -344,42 +344,29 @@ def cart(request):
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_to_cart(request, id):
-    if request.user.is_authenticated:
-        wishlist_item = get_object_or_404(Wishlist, user=request.user, variation_id=id)
-        wishlist_item.delete()
-        try:
-            variation = Variation.objects.get(id=id)
-        except Variation.DoesNotExist:
-            return redirect('product_not_found')
-        quantity = request.POST.get('quantity', 1)
-    
-        if not quantity:
-            quantity = 1
-        else:
-            cart_item, created = Cart.objects.get_or_create(user=request.user, variation=variation)
-            if created:
-                cart_item.quantity = int(quantity)
-            else:
-                cart_item.quantity += int(quantity)
-            cart_item.save()
-        return redirect('cart')
+    try:
+        variation = Variation.objects.get(id=id)
+    except Variation.DoesNotExist:
+        return redirect('product_not_found')
+    quantity = request.POST.get('quantity', 1)
+    try:
+        wishlist_item = Wishlist.objects.get(user=request.user, variation_id=id)
+    except Wishlist.DoesNotExist:
+        print(f'Wishlist item not found for user {request.user} and variation ID {id}')
+    # You can redirect or handle this case appropriately
     else:
-        try:
-            variation = Variation.objects.get(id=id)
-        except Variation.DoesNotExist:
-            return redirect('product_not_found')
-        quantity = request.POST.get('quantity', 1)
-    
-        if not quantity:
-            quantity = 1
+        wishlist_item.delete()
+    if not quantity:
+        quantity = 1
+    else:
+        cart_item, created = Cart.objects.get_or_create(user=request.user, variation=variation)
+        if created:
+            cart_item.quantity = int(quantity)
         else:
-            cart_item, created = Cart.objects.get_or_create(user=request.user, variation=variation)
-            if created:
-                cart_item.quantity = int(quantity)
-            else:
-                cart_item.quantity += int(quantity)
-            cart_item.save()
+            cart_item.quantity += int(quantity)
+        cart_item.save()
         return redirect('cart')
+    
     request.session['cart_pending_variation_id'] = id
     request.session['cart_pending_quantity'] = request.POST.get('quantity', 1)
     return redirect('loginpage')
