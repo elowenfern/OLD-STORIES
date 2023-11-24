@@ -340,7 +340,7 @@ def cart(request):
     else:
         return redirect('loginpage')
     return render(request, 'cart.html', context)
-@login_required
+
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def add_to_cart(request, id):
@@ -1141,8 +1141,7 @@ def return_order(request,id):
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache    
 def logoutpage(request):
-    if 'email' in request.session:
-        request.session.flush()
+    request.session.clear()
     logout(request)
     return redirect('index')
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
@@ -1982,19 +1981,20 @@ def wish(request):
     if not user.is_authenticated:
         # Redirect to the signup page
         return redirect('signup')
-    wishlist_items = Wishlist.objects.filter(user=user)
-    variation_images = []
-    for item in wishlist_items:
-        # Retrieve the variation associated with the wishlist item
-        variation = item.variation
-        # Get the first image associated with the variation, if available.
-        first_variation_image = Variation_img.objects.filter(variation=variation).first()
-        variation_images.append(first_variation_image)
-    items_with_images = list(zip(wishlist_items, variation_images))
-    context = {
-        'items_with_images': items_with_images
-    }
-    return render(request, 'wishlist.html', context)
+    else:
+        wishlist_items = Wishlist.objects.filter(user=user)
+        variation_images = []
+        for item in wishlist_items:
+            # Retrieve the variation associated with the wishlist item
+            variation = item.variation
+            # Get the first image associated with the variation, if available.
+            first_variation_image = Variation_img.objects.filter(variation=variation).first()
+            variation_images.append(first_variation_image)
+        items_with_images = list(zip(wishlist_items, variation_images))
+        context = {
+            'items_with_images': items_with_images
+        }
+        return render(request, 'wishlist.html', context)
 def add_to_wishlist(request, id):
     try:
         variation = Variation.objects.get(id=id)
