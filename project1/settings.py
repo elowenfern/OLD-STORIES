@@ -28,6 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Session settings
+SESSION_COOKIE_SECURE = False
 
 # Application definition
 

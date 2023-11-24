@@ -226,8 +226,6 @@ def display_variations(request,variation_id=None):
         if selected_product_id:
             product = get_object_or_404(Product, id=selected_product_id)
             variations = Variation.objects.filter(product=product)
-            print(selected_product_id)
-            print(variations)
             if selected_color:
                 selected_variation = get_object_or_404(Variation, id=selected_color)
                 selected_image     = Variation_img.objects.filter(variation_id = selected_color)
@@ -235,36 +233,33 @@ def display_variations(request,variation_id=None):
         else:
             selected_variation = None
             variations = Variation.objects.all()
-        for variation in variations:
-            discounted_price = None
-            offer_price = None
-        
+    for variation in variations:
+        discounted_price = None
+        offer_price = None
+        final_price=None
         if selected_variation:
-                product = selected_variation.product
-                if product.category.category_offer:
+            product = selected_variation.product
+            if product.category.category_offer:
                 # Calculate the discount amount as a percentage of the original price
-                    discount_amount = (variation.price * product.category.category_offer) / 100
+                discount_amount = (variation.price * product.category.category_offer) / 100
                     # Subtract the discount amount from the original price to get the discounted price
-                    discounted_price = variation.price - discount_amount
-                if product.product_offer:
-                    offer_price = variation.price - (variation.price * product.product_offer / 100)
-                    # variation.offer_price = offer_price
-                final_price = min(discounted_price, offer_price) if discounted_price is not None and offer_price is not None else discounted_price or offer_price
+                discounted_price = variation.price - discount_amount
+            if product.product_offer:
+                offer_price = variation.price - (variation.price * product.product_offer / 100)
+                # variation.offer_price = offer_price
+            final_price = min(discounted_price, offer_price) if discounted_price is not None and offer_price is not None else discounted_price or offer_price
             
-                variation.discounted_price = discounted_price
-                variation.offer_price = offer_price
-                variation.final_price = final_price  # Add a field to store the final discounted/offer price
-                variation.save()
-        
-        context = {
-            'selected_variation': selected_variation,
-            'variations': variations,
-            'selected_images' : selected_image
-        }
-       
-        return render(request, 'display_variation.html', context)
-    else:
-        return redirect('product_detail')
+            variation.discounted_price = discounted_price
+            variation.offer_price = offer_price
+            variation.final_price = final_price  # Add a field to store the final discounted/offer price
+            variation.save()
+    context = {
+        'selected_variation': selected_variation,
+        'variations': variations,
+        'selected_images' : selected_image
+    }
+    return render(request, 'display_variation.html', context)
+
 def color(request):
     selected_product_id = request.GET.get('selected_product_id', None)
     if request.method == 'POST':
@@ -1136,12 +1131,10 @@ def return_order(request,id):
         return redirect('order_details',id)
     else:
         return HttpResponse("Cannot return the order.")
-
-
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @never_cache    
 def logoutpage(request):
-    request.session.clear()
+    request.session.flush()
     logout(request)
     return redirect('index')
 @cache_control(no_cache=True,must_revalidate=True,no_store=True)
