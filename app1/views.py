@@ -221,7 +221,7 @@ def display_variations(request,variation_id=None):
         if variation_id:
             selected_variation = get_object_or_404(Variation, id=variation_id)
             selected_product_id = selected_variation.product.id  # Use the product associated with the selected variation
-            selected_image = Variation_img.objects.filter(variation=selected_variation)
+            selected_image = Variation_img.objects.filter(variation=selected_variation).update(final_price=None)
             variations = Variation.objects.filter(product=selected_variation.product)  # Filter variations by the product associated with the selected variation
         if selected_product_id:
             product = get_object_or_404(Product, id=selected_product_id)
@@ -232,7 +232,8 @@ def display_variations(request,variation_id=None):
                 selected_product_id=selected_product_id
         else:
             selected_variation = None
-            variations = Variation.objects.all()
+            Variation.objects.all().update(final_price=None)
+
     for variation in variations:
         discounted_price = None
         offer_price = None
@@ -729,7 +730,6 @@ def verify_signup(request):
             messages.info(request,"invalid otp")
             del request.session['email']
             return redirect('signup')
-        
     return render(request,'verifysignup.html',context)
 
 def generate_otp(length = 6):
