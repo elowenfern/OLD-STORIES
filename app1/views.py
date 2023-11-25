@@ -68,15 +68,15 @@ def wallet(request):
 def search(request):
     # Get the 'q' parameter from the GET request
     query = request.GET.get('q', '')
-    products = Product.objects.all()
+    products=Product.objects.filter(deleted=False,category__active=True)
     if query:
         products = Product.objects.filter(
             models.Q(product_name__icontains=query) |
             models.Q(category__category_name__icontains=query)  
         )
     else:
-        products=Product.objects.all() 
-    search_results = Product.objects.filter(product_name__icontains=query)
+        products=Product.objects.filter(deleted=False,category__active=True)
+    search_results = Product.objects.filter(product_name__icontains=query,deleted=False,category__active=True)
     context = {
         'products': products,
         'search_results':  search_results,
@@ -149,14 +149,14 @@ def index(request):
     return render(request, 'index.html', context)
 def shop(request):
     product=Product.objects.filter(deleted=False,category__active=True)
-    variations=Variation.objects.filter(deleted=False)
+    variations=Variation.objects.filter(deleted=False,product__in=product)
     unique_colors = Variation.objects.values('color').annotate(count=Count('color')).order_by('color')
 
     selected_color = request.GET.get('color')
     selected_price = request.GET.get('price')
     selected_category = request.GET.get('category')
     if selected_color:
-        variations = variations.filter(color=selected_color)
+        variations = variations.filter(color=selected_color,product__in=product)
     if selected_category:
        product = product.filter(category__category_name=selected_category)
     
@@ -174,7 +174,7 @@ def shop(request):
     if selected_price in price_ranges:
             price_range = price_ranges[selected_price]
             # Filter for products with prices within the selected price range
-            variations = variations.filter(price__range=price_range)
+            variations = variations.filter(price__range=price_range,product__in=product)
      # Now, after all filtering, add discounted_price and offer_price attributes
     variations = variations.order_by('price')
     context={
