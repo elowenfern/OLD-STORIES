@@ -221,7 +221,7 @@ def display_variations(request,variation_id=None):
         if variation_id:
             selected_variation = get_object_or_404(Variation, id=variation_id)
             selected_product_id = selected_variation.product.id  # Use the product associated with the selected variation
-            selected_image = Variation_img.objects.filter(variation=selected_variation).update(final_price=None)
+            selected_image = Variation_img.objects.filter(variation=selected_variation)
             variations = Variation.objects.filter(product=selected_variation.product)  # Filter variations by the product associated with the selected variation
         if selected_product_id:
             product = get_object_or_404(Product, id=selected_product_id)
@@ -232,16 +232,16 @@ def display_variations(request,variation_id=None):
                 selected_product_id=selected_product_id
         else:
             selected_variation = None
-            Variation.objects.all().update(final_price=None)
+            Variation.objects.all()
 
     for variation in variations:
         discounted_price = None
         offer_price = None
         final_price=None
+        variation.final_price=None
         if selected_variation:
             product = selected_variation.product
             if product.category.category_offer:
-                # Calculate the discount amount as a percentage of the original price
                 discount_amount = (variation.price * product.category.category_offer) / 100
                     # Subtract the discount amount from the original price to get the discounted price
                 discounted_price = variation.price - discount_amount
@@ -249,11 +249,11 @@ def display_variations(request,variation_id=None):
                 offer_price = variation.price - (variation.price * product.product_offer / 100)
                 # variation.offer_price = offer_price
             final_price = min(discounted_price, offer_price) if discounted_price is not None and offer_price is not None else discounted_price or offer_price
-            
-            variation.discounted_price = discounted_price
-            variation.offer_price = offer_price
-            variation.final_price = final_price  # Add a field to store the final discounted/offer price
-            variation.save()
+            selected_variation.final_price = final_price  # Add a field to store the final discounted/offer price
+        else:
+            selected_variation.final_price = None  
+        variation.save()
+
     context = {
         'selected_variation': selected_variation,
         'variations': variations,
