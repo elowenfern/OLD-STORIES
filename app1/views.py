@@ -491,7 +491,7 @@ def check_out(request):
             subtotal += item_price
         elif cart_item.variation.product.product_offer:
             item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.product_offer / Decimal(100)))) * cart_item.quantity
-            subtotal=subtotal+item_price
+            subtotal = subtotal + item_price
         else:
             item_price = (cart_item.variation.price) * (cart_item.quantity)
             subtotal = subtotal + item_price
