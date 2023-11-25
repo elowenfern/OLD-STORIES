@@ -215,6 +215,7 @@ def pdt_detials(request,id):
 
 
 def display_variations(request,variation_id=None):
+    print(".................")
     if request.method == 'GET':
         selected_product_id = request.GET.get('selected_product_id')
         selected_color = request.GET.get('selected_color')
@@ -223,9 +224,11 @@ def display_variations(request,variation_id=None):
             selected_product_id = selected_variation.product.id  # Use the product associated with the selected variation
             selected_image = Variation_img.objects.filter(variation=selected_variation)
             variations = Variation.objects.filter(product=selected_variation.product)  # Filter variations by the product associated with the selected variation
+        
         if selected_product_id:
             product = get_object_or_404(Product, id=selected_product_id)
             variations = Variation.objects.filter(product=product)
+            
             if selected_color:
                 selected_variation = get_object_or_404(Variation, id=selected_color)
                 selected_image     = Variation_img.objects.filter(variation_id = selected_color)
@@ -238,22 +241,20 @@ def display_variations(request,variation_id=None):
         discounted_price = None
         offer_price = None
         final_price=None
-        variation.final_price=None
         if selected_variation:
             product = selected_variation.product
             if product.category.category_offer:
                 discount_amount = (variation.price * product.category.category_offer) / 100
                     # Subtract the discount amount from the original price to get the discounted price
                 discounted_price = variation.price - discount_amount
+                print(discounted_price)
+
             if product.product_offer:
                 offer_price = variation.price - (variation.price * product.product_offer / 100)
                 # variation.offer_price = offer_price
             final_price = min(discounted_price, offer_price) if discounted_price is not None and offer_price is not None else discounted_price or offer_price
-            selected_variation.final_price = final_price  # Add a field to store the final discounted/offer price
-        else:
-            selected_variation.final_price = None  
-        variation.save()
-
+            selected_variation.final_price=final_price
+            selected_variation.save()
     context = {
         'selected_variation': selected_variation,
         'variations': variations,
@@ -298,6 +299,7 @@ def collection(request):
 @never_cache
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def cart(request):
+   
     if request.user.is_authenticated:
         user = request.user
         cart_items = Cart.objects.filter(user=user).order_by('id')
@@ -489,10 +491,10 @@ def check_out(request):
             subtotal += item_price
         elif cart_item.variation.product.product_offer:
             item_price = (cart_item.variation.price - (cart_item.variation.price * Decimal(cart_item.variation.product.product_offer / Decimal(100)))) * cart_item.quantity
-            subtotal=subtotal+itemprice
+            subtotal=subtotal+item_price
         else:
-            itemprice = (cart_item.variation.price) * (cart_item.quantity)
-            subtotal = subtotal + itemprice
+            item_price = (cart_item.variation.price) * (cart_item.quantity)
+            subtotal = subtotal + item_price
         sales_data.append({
             'variation': cart_item.variation,
             'quantity_sold': cart_item.quantity,

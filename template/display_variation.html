@@ -149,10 +149,12 @@
             <p>{{selected_variation.product.description}}</p>
             <p><strong>Size:{{selected_variation.size}}</strong></p>
             <div>
-                {% if selected_variation.final_price %}
+                {% if selected_variation.final_price  %}
+               
                 <strong class="text-dark ml-2"><del>₹{{ selected_variation.price }}</del></strong>
                     <h6 class="text-success"><strong>₹{{ selected_variation.final_price }}</strong></h6>
                 {% else %}
+                
                 <p><strong>Price:₹{{selected_variation.price}}</strong></p>
                 {% endif %}
             </div>
@@ -175,7 +177,7 @@
                 <input type="number" id="quantity" name="quantity" min="1" value="1" class="form-control mb-3"
                     style="width: 50px;">
                     {% if selected_variation.stock > 0 %}
-                    <button type="button" id="add-to-cart-btn" class="btn btn-primary" style="background-color: black; display: inline-block; margin-right: 10px;">
+                    <button id="add-to-cart-btn" class="btn btn-primary" style="background-color: black; display: inline-block; margin-right: 10px;">
                     Add to Cart
                     </button>
                     {% else %}

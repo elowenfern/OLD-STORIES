@@ -119,13 +119,8 @@
                             <h2 class="h5 text-black">{{ cart_item.variation.product.product_name }}</h2>
                           </td>
                           <td>
-							{% if cart_item.variation.product.category.category_offer %}
-							₹{{ cart_item.variation.final_price }}
-							{% elif cart_item.variation.product.product_offer %}
-							₹{{ cart_item.variation.final_price }}
-							{% else %}
-							₹{{cart_item.variation.price}}
-							{% endif %}
+							
+							₹{{ cart_item.variation.price }}
 						</td>
                           <td>
 							

@@ -117,7 +117,7 @@ class Variation(models.Model):
     stock= models.IntegerField(default=0)
     deleted        =     models.BooleanField(default=False)
     price =models.IntegerField(blank=True , null=True)
-    final_price = models.IntegerField(blank=True, null=True)
+    
 class Sales(models.Model):
     variation = models.ForeignKey(Variation, on_delete=models.CASCADE)
     quantity_sold = models.PositiveIntegerField(default=0)
